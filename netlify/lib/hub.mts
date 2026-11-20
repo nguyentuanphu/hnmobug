@@ -67,6 +67,18 @@ export interface LicenceRecord {
 
 export interface Device { id: string; name: string; added: string; lastSeen: string }
 
+/** The console's sign-in, set in the browser on first use: the password's hash and the authenticator key. */
+export interface ConsoleCredentials { passwordHash: string; totpSecret: string; made: string }
+
+/** The sign-in: the one set in the browser, or (older setups) the site settings CONSOLE_PASSWORD_HASH and CONSOLE_TOTP_SECRET. */
+export async function consoleCredentials(store: Store): Promise<ConsoleCredentials | null> {
+  const saved = (await store.get('config/console', { type: 'json' })) as ConsoleCredentials | null;
+  if (saved) return saved;
+  const passwordHash = process.env.CONSOLE_PASSWORD_HASH || '';
+  const totpSecret = process.env.CONSOLE_TOTP_SECRET || '';
+  return passwordHash && totpSecret ? { passwordHash, totpSecret, made: '' } : null;
+}
+
 export const tokenHash = (token: string): string => createHash('sha256').update(`hnmo-request|${token}`).digest('hex');
 export const ipHash = (ip: string): string => createHash('sha256').update((process.env.HUB_SALT || 'hnmo') + ip).digest('hex').slice(0, 16);
 

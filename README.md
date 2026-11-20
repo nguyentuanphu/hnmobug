@@ -22,21 +22,12 @@ Tests: `npm ci && npx tsc -p . && npm test`.
 
 ## Cài đặt một lần / One-time setup
 
-1. Trên máy anh, trong thư mục repo này: `npm ci`, rồi `node tools/make-secrets.mts`. Nhập mật khẩu khu quản lý
-   (ít nhất 12 ký tự). Lệnh in ra các giá trị cần dán và khoá cho app xác thực; không lưu, không gửi đi đâu.
-2. **App xác thực** (Google Authenticator, Microsoft Authenticator…): thêm tài khoản bằng "Nhập khoá thiết lập" với
-   khoá vừa in (hoặc mở link `otpauth://…`).
-3. **Netlify**: Add new site → Import an existing project → GitHub → repo `hnmobug`. Đặt tên site, ví dụ `hnmobug`
-   (địa chỉ `https://hnmobug.netlify.app`). Site configuration → Environment variables: dán từng giá trị ở bước 1
-   (`CONSOLE_PASSWORD_HASH`, `CONSOLE_TOTP_SECRET`, `CONSOLE_SLUG`, `SESSION_SECRET`, `LICENCE_KEY_SECRET`, `HUB_KEY`,
-   `HUB_SALT`), đánh dấu là secret; thêm `ISSUES_URL` = `https://github.com/nguyentuanphu/hnmobug/issues`. Deploy lại.
-4. **GitHub** (repo này): Settings → Secrets and variables → Actions: `HUB_KEY` (cùng giá trị) và `HUB_URL` (địa chỉ site).
-5. Mở `https://<site>/c/<CONSOLE_SLUG>/`, đăng nhập (mật khẩu, rồi mã 6 số), vào **Bảo mật / Security** → **Tạo khoá
-   giấy phép**, và gửi public key hiện ra cho Claude để đặt vào HNMO (một lần).
+No command line is needed: the console's password is set in the browser on first use (the hub key proves it is the
+developer), and the authenticator key is shown there. `tools/make-secrets.mts` is only an optional helper.
 
-1. On your computer, in this repository: `npm ci`, then `node tools/make-secrets.mts`; type the console password.
-2. Add the printed key to an authenticator app.
-3. Netlify: add a site from this repository, name it, paste the printed values as secret environment variables, add
-   `ISSUES_URL`, deploy again.
-4. GitHub Actions secrets: `HUB_KEY` (same value) and `HUB_URL` (the site's address).
-5. Open the console, sign in, Security → make the licence key, and give its public key to Claude for HNMO (once).
+1. Netlify: add a site from this repository and branch; name it (e.g. `hnmobug`).
+2. Environment variables (secret): `HUB_KEY`, `SESSION_SECRET`, `LICENCE_KEY_SECRET`, `CONSOLE_SLUG`, `HUB_SALT`
+   (long random strings), and `ISSUES_URL` = `https://github.com/nguyentuanphu/hnmobug/issues`. Deploy again.
+3. GitHub Actions secrets: `HUB_KEY` (same value) and `HUB_URL` (the site's address).
+4. Open `https://<site>/c/<CONSOLE_SLUG>/`: paste the hub key, choose the password, add the shown key to an
+   authenticator app, type its 6-digit code. Then Security → make the licence key and give its public key to Claude.

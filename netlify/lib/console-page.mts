@@ -40,6 +40,24 @@ pre { white-space:pre-wrap; word-break:break-all; font-size:12px; background:var
 <body>
 <header><h1>HNMO console</h1><button id="lang" type="button">EN</button><button id="logout" type="button" hidden></button></header>
 <main>
+  <form id="setup" class="card" hidden>
+    <h2 data-t="setupTitle"></h2>
+    <p class="muted" data-t="setupHint"></p>
+    <label for="setup-key" data-t="hubKey"></label><input id="setup-key" autocomplete="off" required>
+    <label for="setup-password" data-t="newPassword"></label><input id="setup-password" type="password" autocomplete="new-password" minlength="12" required>
+    <label for="setup-again" data-t="again"></label><input id="setup-again" type="password" autocomplete="new-password" minlength="12" required>
+    <p id="setup-error" class="bad" role="alert"></p>
+    <button class="primary" type="submit" data-t="setupSave"></button>
+  </form>
+  <div id="setup-done" class="card" hidden>
+    <h2 data-t="appTitle"></h2>
+    <p data-t="appHint"></p>
+    <p><span data-t="appKey"></span> <code id="setup-secret"></code></p>
+    <p><a id="setup-link" data-t="appLink"></a></p>
+    <label for="setup-code" data-t="code"></label><input id="setup-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+    <p id="setup-done-error" class="bad" role="alert"></p>
+    <button class="primary" id="setup-finish" type="button" data-t="signIn"></button>
+  </div>
   <form id="login" class="card" hidden>
     <label for="password" data-t="password"></label><input id="password" type="password" autocomplete="current-password" required>
     <div id="code-row" hidden><label for="code" data-t="code"></label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
@@ -54,13 +72,13 @@ pre { white-space:pre-wrap; word-break:break-all; font-size:12px; background:var
 <script>
 const BASE = ${JSON.stringify(base)};
 const T = {
-  en: { password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
+  en: { setupTitle:'First use: set your sign-in', setupHint:'Paste the hub key (HUB_KEY from the site settings) to prove it is you, and choose the console password. This is asked only once.', hubKey:'Hub key (HUB_KEY)', newPassword:'New password (12 characters or more)', again:'The password again', setupSave:'Save', differ:'The two passwords differ or are shorter than 12 characters.', appTitle:'Add the console to your authenticator app', appHint:'In Google Authenticator or Microsoft Authenticator: add an account, choose "Enter a setup key", name it HNMO console, and type the key below (time based). Then type the 6-digit code it shows.', appKey:'Key:', appLink:'or open this link on the phone', password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
     hosts:'Servers', requests:'Licence requests', licences:'Licences', bugs:'Bug reports', security:'Security',
     lastSeen:'Last report', licence:'Licence', version:'Version', players:'Players (most at once / limit)', accounts:'Accounts / characters', health:'Crashes / errors this week', files:'Files', features:'Features',
     none:'None yet.', free:'free (10 players)', issue:'Issue a licence', decline:'Decline', revoke:'Withdraw', undo:'Give back', name:'Name', contact:'Contact', asked:'Players asked', note:'Note', machine:'Computer id', expires:'Last day (empty: none)', maxPlayers:'Players at once', bind:'Only this computer',
     open:'waiting', issued:'issued', declined:'declined', withdrawn:'withdrawn', copy:'Copy file', copied:'Copied', pending:'reports wait for the daily filing as issues', openIssues:'Open the issues',
     makeKey:'Make the licence key', keyMade:'Licence key made', keyHint:'Give this public key to Claude to put into HNMO (licence-pub.pem), once:', devices:'Trusted browsers', forget:'Remove', thisOne:'this browser', saved:'Done.', grace:'over the limit since', uptime:'Up', os:'System', integrity:{ok:'unchanged', modified:'MODIFIED', unsigned:'unsigned build', unknown:'unknown'} },
-  vi: { password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
+  vi: { setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
     hosts:'Server', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
     lastSeen:'Báo cáo gần nhất', licence:'Giấy phép', version:'Phiên bản', players:'Người chơi (cao nhất / giới hạn)', accounts:'Tài khoản / nhân vật', health:'Sập / lỗi tuần này', files:'File', features:'Tính năng',
     none:'Chưa có.', free:'miễn phí (10 người)', issue:'Cấp giấy phép', decline:'Từ chối', revoke:'Thu hồi', undo:'Trả lại', name:'Tên', contact:'Liên lạc', asked:'Số người xin', note:'Ghi chú', machine:'Mã máy', expires:'Ngày cuối (trống: không hạn)', maxPlayers:'Số người cùng lúc', bind:'Chỉ máy này',
@@ -75,12 +93,13 @@ const when = (iso) => iso ? new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'e
 async function api(action, body) {
   const r = await fetch(BASE + '/api/' + action, body === undefined ? { credentials:'same-origin' } : { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json', 'X-Console':'1' }, body:JSON.stringify(body) });
   const data = await r.json().catch(() => ({}));
-  if (r.status === 401 && action !== 'login') { showLogin(); throw new Error('sign in'); }
+  if (r.status === 401 && action !== 'login' && action !== 'setup') { showLogin(); throw new Error('sign in'); }
   if (!r.ok) throw new Error(data.error || data.message || r.status);
   return data;
 }
 function labels() { document.querySelectorAll('[data-t]').forEach((n) => { n.textContent = t(n.dataset.t); }); document.getElementById('lang').textContent = lang === 'vi' ? 'EN' : 'VI'; document.getElementById('logout').textContent = t('signOut'); document.documentElement.lang = lang; }
-function showLogin() { document.getElementById('app').hidden = true; document.getElementById('logout').hidden = true; document.getElementById('login').hidden = false; labels(); }
+function showSetup() { document.getElementById('app').hidden = true; document.getElementById('login').hidden = true; document.getElementById('setup').hidden = false; labels(); }
+function showLogin() { document.getElementById('setup').hidden = true; document.getElementById('setup-done').hidden = true; document.getElementById('app').hidden = true; document.getElementById('logout').hidden = true; document.getElementById('login').hidden = false; labels(); }
 async function load() { state = await api('state'); document.getElementById('login').hidden = true; document.getElementById('app').hidden = false; document.getElementById('logout').hidden = false; render(); }
 function render() {
   labels();
@@ -175,7 +194,35 @@ document.getElementById('login').addEventListener('submit', async (e) => {
     await load();
   } catch (err) { error.textContent = String(err.message) === 'wait' ? t('wait') : t('wrong'); }
 });
-load().catch(() => showLogin());
+let setupPassword = '';
+document.getElementById('setup').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const error = document.getElementById('setup-error'); error.textContent = '';
+  const password = document.getElementById('setup-password').value, again = document.getElementById('setup-again').value;
+  if (password.length < 12 || password !== again) { error.textContent = t('differ'); return; }
+  try {
+    const answer = await api('setup', { hubKey: document.getElementById('setup-key').value, password });
+    setupPassword = password;
+    document.getElementById('setup').hidden = true;
+    document.getElementById('setup-secret').textContent = answer.totpSecret;
+    document.getElementById('setup-link').href = answer.otpauth;
+    document.getElementById('setup-done').hidden = false;
+    labels();
+  } catch (err) { error.textContent = String(err.message) === 'wait' ? t('wait') : t('wrong'); }
+});
+document.getElementById('setup-finish').addEventListener('click', async () => {
+  const error = document.getElementById('setup-done-error'); error.textContent = '';
+  try {
+    await api('login', { password: setupPassword, code: document.getElementById('setup-code').value });
+    setupPassword = '';
+    document.getElementById('setup-done').hidden = true;
+    await load();
+  } catch { error.textContent = t('wrong'); }
+});
+fetch(BASE + '/api/status', { credentials: 'same-origin' }).then((r) => r.json()).then((s) => {
+  if (!s.configured) { showSetup(); return; }
+  load().catch(() => showLogin());
+}).catch(() => showLogin());
 </script>
 </body></html>`;
 }

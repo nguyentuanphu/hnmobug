@@ -133,6 +133,35 @@ test('the console: password, then the code on a new browser; issuing a licence a
   useStoreForTests(null);
 });
 
+test('first use: the hub key proves it is the developer; the password and authenticator key are set once', async () => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  const saved = { hash: process.env.CONSOLE_PASSWORD_HASH, totp: process.env.CONSOLE_TOTP_SECRET };
+  delete process.env.CONSOLE_PASSWORD_HASH;
+  delete process.env.CONSOLE_TOTP_SECRET;
+  process.env.HUB_KEY = 'h'.repeat(64);
+  try {
+    const base = `/c/${process.env.CONSOLE_SLUG}`;
+    const h = { 'X-Console': '1' };
+    assert.deepEqual(await (await consoleFn(new Request(`https://hub.example${base}/api/status`), ctx)).json(), { configured: false });
+    assert.equal((await consoleFn(post(`${base}/api/login`, { password: 'whatever long one' }, h), ctx)).status, 409, 'nothing to sign in with yet');
+    assert.equal((await consoleFn(post(`${base}/api/setup`, { hubKey: 'wrong', password: 'a fine long password' }, h), ctx)).status, 401);
+    assert.equal((await consoleFn(post(`${base}/api/setup`, { hubKey: 'h'.repeat(64), password: 'short' }, h), ctx)).status, 400);
+    const made = await (await consoleFn(post(`${base}/api/setup`, { hubKey: 'h'.repeat(64), password: 'a fine long password' }, h), ctx)).json() as { totpSecret: string; otpauth: string };
+    assert.match(made.otpauth, /^otpauth:\/\/totp\//);
+    assert.equal((await consoleFn(post(`${base}/api/setup`, { hubKey: 'h'.repeat(64), password: 'another long password' }, h), ctx)).status, 409, 'set once');
+    assert.equal(JSON.stringify([...store.data.values()]).includes('a fine long password'), false, 'only the hash is kept');
+    const code = totpCode(made.totpSecret, Math.floor(Date.now() / 30_000));
+    const signedIn = await consoleFn(post(`${base}/api/login`, { password: 'a fine long password', code }, h), ctx);
+    assert.equal(signedIn.status, 200);
+    assert.deepEqual(await (await consoleFn(new Request(`https://hub.example${base}/api/status`), ctx)).json(), { configured: true });
+  } finally {
+    process.env.CONSOLE_PASSWORD_HASH = saved.hash;
+    process.env.CONSOLE_TOTP_SECRET = saved.totp;
+    useStoreForTests(null);
+  }
+});
+
 test('the same bug from two servers is one issue that counts both', () => {
   const now = '2026-11-20T05:00:00Z';
   const bug = (text: string) => ({ id: 'B1', category: 'skill', text, server: '', place: '', status: '', info: '', reply: '', character: '', created: '' });

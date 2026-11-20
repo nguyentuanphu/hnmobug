@@ -1,12 +1,13 @@
 // The developer's console, on a hidden path: /c/<CONSOLE_SLUG>/ (any other /c/… path is a plain "not found" page of
 // the cover site). Sign-in: the password always; on a browser not yet trusted also the authenticator code, after which
-// the browser is trusted for 30 days. API under /c/<slug>/api/: login, logout, state, make-key, issue, decline, revoke,
+// the browser is trusted for 30 days. The first visit sets the password (with the hub key as proof) and makes the
+// authenticator key. API under /c/<slug>/api/: status, setup, login, logout, state, make-key, issue, decline, revoke,
 // forget-device. Every change needs the session cookie and the X-Console header (no cross-site requests).
-import { randomUUID } from 'node:crypto';
-import { checkPassword, checkTotp, cookie, cookies, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
 import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../lib/keys.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { clientIp, countOnce, hub, ipHash, json, licenceKey, listJson, type Device, type HostRecord, type LicenceRecord, type RequestRecord, type Store } from '../lib/hub.mts';
+import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type RequestRecord, type Store } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
 
 interface Session { exp: number; d: string }
@@ -40,22 +41,46 @@ export default async (req: Request, context: { ip?: string }) => {
   const store = hub();
   if (req.method === 'POST' && req.headers.get('x-console') !== '1') return json({ error: 'header' }, 403);
 
+  const who = ipHash(clientIp(req, context));
+  const failKey = `auth/fail/${who}/${new Date().toISOString().slice(0, 13)}`;
+  const tooMany = async () => Number((await store.get(failKey)) ?? 0) >= 10;
+  const fail = async () => {
+    await countOnce(store, failKey, 1000);
+    return json({ error: 'wrong' }, 401);
+  };
+
+  // Whether the sign-in was set yet (the page shows the first-use form when not).
+  if (action === 'status' && req.method === 'GET') {
+    return json({ configured: (await consoleCredentials(store)) !== null });
+  }
+
+  // First use: the hub key (which only the developer has) proves it's them; the password is set and an authenticator
+  // key is made, shown once to add to the app. Refused once a sign-in exists.
+  if (action === 'setup' && req.method === 'POST') {
+    if (await tooMany()) return json({ error: 'wait' }, 429);
+    if (await consoleCredentials(store)) return json({ error: 'already set' }, 409);
+    const body = (await req.json().catch(() => ({}))) as { hubKey?: string; password?: string };
+    const expected = Buffer.from(process.env.HUB_KEY || '');
+    const given = Buffer.from(typeof body.hubKey === 'string' ? body.hubKey.trim() : '');
+    if (expected.length < 20 || given.length !== expected.length || !timingSafeEqual(given, expected)) return fail();
+    const password = typeof body.password === 'string' ? body.password : '';
+    if (password.length < 12 || password.length > 200) return json({ error: 'The password needs 12 characters or more.' }, 400);
+    const credentials: ConsoleCredentials = { passwordHash: hashPassword(password), totpSecret: base32Encode(randomBytes(20)), made: new Date().toISOString() };
+    await store.setJSON('config/console', credentials);
+    return json({ ok: true, totpSecret: credentials.totpSecret, otpauth: `otpauth://totp/HNMO%20console?secret=${credentials.totpSecret}&issuer=HNMO` });
+  }
+
   if (action === 'login' && req.method === 'POST') {
-    const who = ipHash(clientIp(req, context));
-    const hour = new Date().toISOString().slice(0, 13);
-    const failKey = `auth/fail/${who}/${hour}`;
-    if (Number((await store.get(failKey)) ?? 0) >= 10) return json({ error: 'wait', message: 'Too many tries; wait an hour.' }, 429);
+    if (await tooMany()) return json({ error: 'wait', message: 'Too many tries; wait an hour.' }, 429);
+    const credentials = await consoleCredentials(store);
+    if (!credentials) return json({ error: 'not set' }, 409);
     const body = (await req.json().catch(() => ({}))) as { password?: string; code?: string };
-    const fail = async () => {
-      await countOnce(store, failKey, 1000);
-      return json({ error: 'wrong' }, 401);
-    };
-    if (!checkPassword(body.password ?? '')) return fail();
+    if (!checkPassword(body.password ?? '', credentials.passwordHash)) return fail();
     let device = await trustedDevice(req, store);
     const headers = new Headers({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
     if (!device) {
       if (!body.code) return json({ needCode: true });
-      if (!checkTotp(body.code)) return fail();
+      if (!checkTotp(body.code, Date.now(), credentials.totpSecret)) return fail();
       device = randomUUID();
       const now = new Date().toISOString();
       const record: Device = { id: device, name: cleanText(req.headers.get('user-agent'), 160) || 'browser', added: now, lastSeen: now };
