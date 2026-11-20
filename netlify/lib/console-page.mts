@@ -100,7 +100,8 @@ async function api(action, body) {
 function labels() { document.querySelectorAll('[data-t]').forEach((n) => { n.textContent = t(n.dataset.t); }); document.getElementById('lang').textContent = lang === 'vi' ? 'EN' : 'VI'; document.getElementById('logout').textContent = t('signOut'); document.documentElement.lang = lang; }
 function showSetup() { document.getElementById('app').hidden = true; document.getElementById('login').hidden = true; document.getElementById('setup').hidden = false; labels(); }
 function showLogin() { document.getElementById('setup').hidden = true; document.getElementById('setup-done').hidden = true; document.getElementById('app').hidden = true; document.getElementById('logout').hidden = true; document.getElementById('login').hidden = false; labels(); }
-async function load() { state = await api('state'); document.getElementById('login').hidden = true; document.getElementById('app').hidden = false; document.getElementById('logout').hidden = false; render(); }
+let editing = false;
+async function load() { state = await api('state'); editing = false; document.getElementById('login').hidden = true; document.getElementById('app').hidden = false; document.getElementById('logout').hidden = false; render(); }
 function render() {
   labels();
   const tabs = document.getElementById('tabs'); tabs.replaceChildren();
@@ -222,6 +223,12 @@ document.getElementById('setup-finish').addEventListener('click', async () => {
 fetch(BASE + '/api/status', { credentials: 'same-origin' }).then((r) => r.json()).then((s) => {
   if (!s.configured) { showSetup(); return; }
   load().catch(() => showLogin());
+  // New requests, reports and servers show up without a reload: when the tab comes back and every minute, unless a
+  // form on the page has unsaved typing.
+  document.getElementById('view').addEventListener('input', () => { editing = true; });
+  const refresh = () => { if (document.visibilityState === 'visible' && !document.getElementById('app').hidden && !editing) load().catch(() => {}); };
+  document.addEventListener('visibilitychange', refresh);
+  setInterval(refresh, 60000);
 }).catch(() => showLogin());
 </script>
 </body></html>`;
