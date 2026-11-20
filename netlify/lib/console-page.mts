@@ -108,7 +108,7 @@ const VIEWS = {
         el('td', { text: p.accounts + ' / ' + p.characters }),
         el('td', { text: hl.crashes + ' / ' + hl.errors, class: hl.crashes ? 'warn' : '' }),
         el('td', { text: t('integrity')[hl.integrity] ?? hl.integrity, class: hl.integrity === 'modified' ? 'bad' : hl.integrity === 'ok' ? 'ok' : '' }),
-        el('td', {}, el('div', { text: [f.season9 ? 'Season 9' : '', f.arena ? 'Arena' : '', 'EXP ' + f.expRate, 'drop ' + f.dropRate].filter(Boolean).join(' · ') }), el('div', { class:'muted', text: f.plugins.length + ' plug-ins · ' + h.bugsSent + ' ' + t('bugs').toLowerCase() }))));
+        el('td', {}, el('div', { text: [f.season9 ? 'Season 9' : '', f.arena ? 'Arena' : '', 'EXP ' + f.expRate, f.dropRate ? 'drop ' + f.dropRate : ''].filter(Boolean).join(' · ') }), el('div', { class:'muted', text: f.plugins.length + ' plug-ins · ' + h.bugsSent + ' ' + t('bugs').toLowerCase() }))));
     }
     table.append(body);
     return el('div', { class:'card table' }, table);
