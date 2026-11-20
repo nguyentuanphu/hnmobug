@@ -1,31 +1,42 @@
 # HNMO hub (private)
 
-Takes the bug reports and licence requests that HNMO servers' admin panels send, and turns them into issues here.
-No server owner signs up: a licensed server is known by its signed licence; a server without one (the free 10
-players) may send 10 reports a day.
+The HNMO developer's console and the address HNMO servers send to. The site's front is a plain notes blog; the
+console is on a hidden path (`/c/<CONSOLE_SLUG>/`) behind a password and, on a new browser, a 6-digit code from an
+authenticator app (the browser is then trusted for 30 days).
 
-- `netlify/functions/report.mts`: `POST /api/report` (from the admin panels).
-- `netlify/functions/reports.mts`: `GET /api/reports` and `POST /api/reports` (with the hub key): the waiting reports,
-  and marking them filed.
-- `tools/reports-to-issues.mts`, run every hour by `.github/workflows/reports-to-issues.yml`: one issue per bug (the
-  same bug from other servers counts on it), licence requests, a daily summary after 9 am Sydney.
-- Tests: `npm ci && npx tsc -p . && npm test`.
+What HNMO servers send (never player accounts, e-mails or IPs):
+- `POST /api/request`: a licence request (name, contact, players, note; a one-time secret only that server knows).
+  `POST /api/licence`: the server asks for the answer with its secret and gets the licence the developer issued.
+- `POST /api/weekly`: once in 6 days per server: licence, version, system, uptime, the most players at once against the
+  limit, accounts and characters, crashes and errors, the file check, Season 9 / Arena, plug-ins, rates, and up to 50
+  bug reports its owner forwarded. The answer says whether the licence was withdrawn.
 
-## Cài đặt một lần (chủ HNMO) / One-time setup
+In the console: the servers and their weekly numbers, licence requests (issue or decline), licences (copy, withdraw),
+the bug reports waiting, the licence key, trusted browsers. Licences are signed with a key of their own made by the hub
+(kept encrypted); HNMO's build key stays on the developer's computer.
 
-1. **Tạo khoá hub**: một chuỗi ngẫu nhiên dài (ví dụ chạy `openssl rand -hex 32`). Giữ kín.
-2. **Netlify**: Add new site → Import an existing project → GitHub → chọn repo `hnmobug` (branch hiện có) → Deploy.
-   Đặt tên site (Site configuration → Change site name), ví dụ `hnmobug` → địa chỉ `https://hnmobug.netlify.app`.
-   Site configuration → Environment variables: thêm `HUB_KEY` = khoá ở bước 1, và `HUB_SALT` = một chuỗi ngẫu nhiên khác.
-   Deploys → Trigger deploy.
-3. **GitHub** (repo này): Settings → Secrets and variables → Actions → New repository secret:
-   `HUB_URL` = địa chỉ site (ví dụ `https://hnmobug.netlify.app`), `HUB_KEY` = cùng khoá ở bước 1.
-4. Gửi địa chỉ site cho Claude để đặt làm địa chỉ mặc định trong HNMO.
-5. Thử: Actions → Reports to issues → Run workflow.
+The daily GitHub Action (`.github/workflows/reports-to-issues.yml`) files the bug reports as issues here: one issue per
+bug, counting the servers that saw it, opened again when it comes back, and a daily summary.
 
-1. **Hub key**: a long random string (e.g. `openssl rand -hex 32`); keep it secret.
-2. **Netlify**: add a site from this repository; name it (e.g. `hnmobug` → `https://hnmobug.netlify.app`); environment
-   variables `HUB_KEY` (step 1) and `HUB_SALT` (another random string); deploy again.
-3. **GitHub** (this repository): Actions secrets `HUB_URL` (the site's address) and `HUB_KEY` (the same key).
-4. Give the site's address to Claude to set it as HNMO's default.
-5. Try it: Actions → Reports to issues → Run workflow.
+Tests: `npm ci && npx tsc -p . && npm test`.
+
+## Cài đặt một lần / One-time setup
+
+1. Trên máy anh, trong thư mục repo này: `npm ci`, rồi `node tools/make-secrets.mts`. Nhập mật khẩu khu quản lý
+   (ít nhất 12 ký tự). Lệnh in ra các giá trị cần dán và khoá cho app xác thực; không lưu, không gửi đi đâu.
+2. **App xác thực** (Google Authenticator, Microsoft Authenticator…): thêm tài khoản bằng "Nhập khoá thiết lập" với
+   khoá vừa in (hoặc mở link `otpauth://…`).
+3. **Netlify**: Add new site → Import an existing project → GitHub → repo `hnmobug`. Đặt tên site, ví dụ `hnmobug`
+   (địa chỉ `https://hnmobug.netlify.app`). Site configuration → Environment variables: dán từng giá trị ở bước 1
+   (`CONSOLE_PASSWORD_HASH`, `CONSOLE_TOTP_SECRET`, `CONSOLE_SLUG`, `SESSION_SECRET`, `LICENCE_KEY_SECRET`, `HUB_KEY`,
+   `HUB_SALT`), đánh dấu là secret; thêm `ISSUES_URL` = `https://github.com/nguyentuanphu/hnmobug/issues`. Deploy lại.
+4. **GitHub** (repo này): Settings → Secrets and variables → Actions: `HUB_KEY` (cùng giá trị) và `HUB_URL` (địa chỉ site).
+5. Mở `https://<site>/c/<CONSOLE_SLUG>/`, đăng nhập (mật khẩu, rồi mã 6 số), vào **Bảo mật / Security** → **Tạo khoá
+   giấy phép**, và gửi public key hiện ra cho Claude để đặt vào HNMO (một lần).
+
+1. On your computer, in this repository: `npm ci`, then `node tools/make-secrets.mts`; type the console password.
+2. Add the printed key to an authenticator app.
+3. Netlify: add a site from this repository, name it, paste the printed values as secret environment variables, add
+   `ISSUES_URL`, deploy again.
+4. GitHub Actions secrets: `HUB_KEY` (same value) and `HUB_URL` (the site's address).
+5. Open the console, sign in, Security → make the licence key, and give its public key to Claude for HNMO (once).

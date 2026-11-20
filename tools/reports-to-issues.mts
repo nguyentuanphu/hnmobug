@@ -1,10 +1,10 @@
-// Reports → GitHub issues, run every hour by .github/workflows/reports-to-issues.yml. It reads the reports waiting on
+// Reports → GitHub issues, run once a day by .github/workflows/reports-to-issues.yml. It reads the reports waiting on
 // the hub (HUB_URL/api/reports, with HUB_KEY) and keeps one issue per bug:
 //   - a new bug gets an issue (labels hnmo-report, bug, area:<kind>, and licensed or no-licence);
 //   - the same bug again (same kind and text) adds its report as a comment, updates the "seen" line (how many times,
 //     on how many servers, which versions), and opens the issue again if it was closed;
-//   - a licence request gets an issue of its own (label licence-request) with the signing command ready to copy;
-//   - once a day, the first run after 9 am Sydney, the issue "Daily summary" (label hnmo-summary) is updated.
+//   - each run (or --summary) updates the issue "Daily summary" (label hnmo-summary).
+// Licence requests are handled in the hub's console, not here.
 // Filed reports are marked done on the hub. Times are Sydney time.
 //   HUB_URL=https://… HUB_KEY=… GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/reports-to-issues.mts [--dry] [--summary]
 import { createHash } from 'node:crypto';
@@ -40,7 +40,7 @@ export const seenLine = (s: Seen): string =>
   `Seen ${s.n} time${s.n === 1 ? '' : 's'} on ${s.servers.length} server${s.servers.length === 1 ? '' : 's'} (${s.servers.join(', ')}); versions ${s.versions.join(', ') || 'unknown'}; last ${sydneyTime(new Date(s.last))}.`;
 
 export function reportDetails(r: Stored): string {
-  const b = r.bug!;
+  const b = r.bug;
   return [
     `- Server: ${serverName(r)}${r.licenceProblem ? ` (licence ${r.licenceProblem})` : ''} · ${b.server || '?'} · version ${r.version || '?'}`,
     b.place ? `- Place: ${b.place}` : '',
@@ -52,7 +52,7 @@ export function reportDetails(r: Stored): string {
 }
 
 export function bugIssue(r: Stored, key: string, seen: Seen): { title: string; body: string; labels: string[] } {
-  const b = r.bug!;
+  const b = r.bug;
   const first = b.text.split('\n')[0].slice(0, 80);
   return {
     title: noMention(`[${b.category}] ${first}`),
@@ -71,30 +71,12 @@ export function withSeen(body: string, seen: Seen): string {
     .replace(/<!-- count -->.*?<!-- \/count -->/, `<!-- count -->${seenLine(seen)}<!-- /count -->`);
 }
 
-export function requestIssue(r: Stored): { title: string; body: string; labels: string[] } {
-  const q = r.request!;
-  const players = q.players || 30;
-  return {
-    title: noMention(`Licence request: ${q.name}`),
-    body: noMention([
-      `**Licence request** received ${sydneyTime(new Date(r.receivedAt))}`, '',
-      `- Name: ${q.name}`, q.contact ? `- Contact: ${q.contact}` : '', `- Players asked for: ${q.players || 'not said'}`,
-      `- Computer id: \`${r.machine}\``, `- Version: ${r.version || '?'}`,
-      `- Licence now: ${r.licensee ? `${r.licensee} (valid)` : r.licenceProblem ? `none usable (${r.licenceProblem})` : 'none'}`,
-      q.message ? `\n> ${q.message.replace(/\n/g, '\n> ')}` : '', '',
-      'Sign it on the HNMO Developer page, or:', '```',
-      `client/web/tools/hnmo/sign-license.sh "${q.name.replace(/"/g, "'")}" ${players} - ${r.machine}`, '```',
-    ].filter((line) => line !== '').join('\n')),
-    labels: ['hnmo-report', 'licence-request'],
-  };
-}
-
 export function summaryBody(issues: Issue[], day: string, now: Date): string {
   const open = issues.filter((i) => i.state === 'open' && !i.pull_request && i.labels.some((l) => l.name === 'bug'));
   const areas = new Map<string, number>();
   for (const i of open) for (const l of i.labels) if (l.name.startsWith('area:')) areas.set(l.name.slice(5), (areas.get(l.name.slice(5)) ?? 0) + 1);
   const dayAgo = now.getTime() - 24 * 3600 * 1000;
-  const recent = issues.filter((i) => !i.pull_request && Date.parse(i.updated_at) >= dayAgo && i.labels.some((l) => l.name === 'bug' || l.name === 'licence-request'));
+  const recent = issues.filter((i) => !i.pull_request && Date.parse(i.updated_at) >= dayAgo && i.labels.some((l) => l.name === 'bug'));
   return [
     `<!-- hnmo-summary-day:${day} -->`, `**Daily summary** ${day} (updated ${sydneyTime(now)})`, '',
     `Open bugs: ${open.length}${areas.size ? ' (' + [...areas].map(([a, n]) => `${a} ${n}`).join(', ') + ')' : ''}`, '',
@@ -116,7 +98,7 @@ async function main(): Promise<void> {
     return (r.status === 204 ? {} : await r.json()) as T;
   };
 
-  for (const [name, color] of [['hnmo-report', '5319e7'], ['bug', 'd73a4a'], ['licence-request', '0e8a16'], ['licensed', 'c5def5'], ['no-licence', 'fef2c0'], ['hnmo-summary', 'bfdadc'],
+  for (const [name, color] of [['hnmo-report', '5319e7'], ['bug', 'd73a4a'], ['licensed', 'c5def5'], ['no-licence', 'fef2c0'], ['hnmo-summary', 'bfdadc'],
     ...['display', 'skill', 'item', 'quest', 'connection', 'other'].map((a) => [`area:${a}`, 'ededed'])]) {
     await gh(`labels/${encodeURIComponent(name)}`).catch(() => gh('labels', 'POST', { name, color }).catch(() => undefined));
   }
@@ -135,7 +117,7 @@ async function main(): Promise<void> {
   const { reports } = await hub.json() as { reports: Pending[] };
   const done: string[] = [];
   for (const r of reports) {
-    if (r.kind === 'bug' && r.bug) {
+    if (r.bug) {
       const key = bugKey(r.bug.category, r.bug.text);
       const existing = byKey.get(key);
       if (existing) {
@@ -152,10 +134,6 @@ async function main(): Promise<void> {
         byKey.set(key, created);
         issues.push(created);
       }
-    } else if (r.kind === 'licence-request' && r.request) {
-      const issue = requestIssue(r);
-      const made = await gh<Issue>('issues', 'POST', issue);
-      issues.push({ number: made.number ?? 0, title: issue.title, body: issue.body, state: 'open', labels: issue.labels.map((name) => ({ name })), updated_at: new Date().toISOString() });
     }
     done.push(r.key);
   }
@@ -165,18 +143,13 @@ async function main(): Promise<void> {
   }
   console.log(`${reports.length} reports filed.`);
 
-  // The daily summary: the first run after 9 am Sydney (or --summary).
+  // The daily summary, each run.
   const now = new Date();
-  const day = sydneyDay(now);
-  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Australia/Sydney', hour: '2-digit', hourCycle: 'h23' }).format(now));
   const summary = issues.find((i) => i.labels.some((l) => l.name === 'hnmo-summary'));
-  const doneToday = summary && (summary.body ?? '').includes(`<!-- hnmo-summary-day:${day} -->`);
-  if (arg('--summary') || (hour >= 9 && !doneToday)) {
-    const body = summaryBody(issues, day, now);
-    if (summary) await gh(`issues/${summary.number}`, 'PATCH', { body, state: 'open' });
-    else await gh('issues', 'POST', { title: 'Daily summary', body, labels: ['hnmo-report', 'hnmo-summary'] });
-    console.log('Daily summary updated.');
-  }
+  const body = summaryBody(issues, sydneyDay(now), now);
+  if (summary) await gh(`issues/${summary.number}`, 'PATCH', { body, state: 'open' });
+  else await gh('issues', 'POST', { title: 'Daily summary', body, labels: ['hnmo-report', 'hnmo-summary'] });
+  console.log('Daily summary updated.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

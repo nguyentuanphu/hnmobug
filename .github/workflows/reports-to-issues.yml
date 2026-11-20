@@ -1,17 +1,12 @@
-# Every hour (and by hand: Actions → Reports to issues → Run workflow) tools/reports-to-issues.mts files the reports
-# waiting on the hub as issues: one per bug, licence requests, and the daily summary after 9 am Sydney.
+# Once a day, 10:07 Sydney (and by hand: Actions → Reports to issues → Run workflow), tools/reports-to-issues.mts files
+# the bug reports the servers' weekly reports brought as issues (one per bug) and updates the daily summary.
 # Secrets (Settings → Secrets and variables → Actions): HUB_URL (the hub's address, e.g. https://hnmobug.netlify.app)
 # and HUB_KEY (the same long key as the site's HUB_KEY setting). Without them the job does nothing.
 name: Reports to issues
 on:
   schedule:
-    - cron: '23 * * * *'
+    - cron: '7 23 * * *'   # 23:07 UTC = 10:07 Sydney in summer (09:07 in winter)
   workflow_dispatch:
-    inputs:
-      summary:
-        description: 'Update the daily summary now'
-        type: boolean
-        default: false
 permissions:
   issues: write
   contents: read
@@ -32,4 +27,4 @@ jobs:
           HUB_URL: ${{ secrets.HUB_URL }}
           HUB_KEY: ${{ secrets.HUB_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node tools/reports-to-issues.mts ${{ inputs.summary && '--summary' || '' }}
+        run: node tools/reports-to-issues.mts

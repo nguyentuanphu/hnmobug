@@ -1,44 +1,64 @@
-// POST /api/report: an HNMO server's admin panel sends a bug report its owner forwards, or a licence request. A licensed
-// server is known by its signed licence file; a server without one (the free 10 players) may send a few a day. The
-// reports wait in the site's store until the hourly GitHub Action (tools/reports-to-issues.mts) files them as issues.
-import { getStore } from '@netlify/blobs';
-import { createHash, randomUUID } from 'node:crypto';
+// POST /api/request: an HNMO server asks for a licence (Host settings, "Ask the HNMO developer for a licence"). It sends
+// a one-time secret only it knows; the licence the developer issues in the console comes back to it through
+// /api/licence with that secret. A computer may ask 3 times a Sydney day.
+// POST /api/licence {machine, request, token}: the answer to a request: waiting, issued (with the licence file) or declined.
+import { randomUUID } from 'node:crypto';
 import { checkLicence } from '../lib/license.mts';
-import { clean, dailyLimit, type Incoming } from '../lib/report.mts';
+import { cleanMachine, cleanRequest, REQUESTS_PER_DAY } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
-
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+import { clientIp, countOnce, hub, ipHash, json, licenceKeys, tokenHash, type RequestRecord } from '../lib/hub.mts';
+import { timingSafeEqual } from 'node:crypto';
 
 export default async (req: Request, context: { ip?: string }) => {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
   const raw = await req.text();
   if (raw.length > 20_000) return json({ error: 'too big' }, 413);
-  let body: Incoming;
-  try { body = JSON.parse(raw) as Incoming; } catch { return json({ error: 'not JSON' }, 400); }
+  let body: Record<string, unknown>;
+  try {
+    body = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return json({ error: 'not JSON' }, 400);
+  }
+  const machine = cleanMachine(body.machine);
+  if (!machine) return json({ error: 'machine' }, 400);
+  const store = hub();
+  const path = new URL(req.url).pathname;
 
-  const now = new Date();
-  const today = sydneyDay(now);
-  const licence = checkLicence(body.licence ?? null, today);
-  const licensee = licence.valid ? licence.licensee : null;
-  const problem = licence.valid ? null : (licence.reason === 'none' ? null : licence.reason);
-  const report = clean(body, licensee, problem, now);
-  if (!report) return json({ error: 'not a report' }, 400);
-
-  // The limit counts by computer and by connection (an IP only as a salted hash), per Sydney day.
-  const store = getStore({ name: 'hub', consistency: 'strong' });
-  const salt = process.env.HUB_SALT || 'hnmo';
-  const ipHash = createHash('sha256').update(salt + (context.ip || req.headers.get('x-nf-client-connection-ip') || '')).digest('hex').slice(0, 16);
-  const limit = dailyLimit(report.kind, licensee !== null);
-  for (const who of [`m-${report.machine}`, `ip-${ipHash}`]) {
-    const counterKey = `limits/${today}/${report.kind}/${who}`;
-    const count = Number((await store.get(counterKey)) ?? 0);
-    if (count >= limit) return json({ error: 'limit', limit, message: `This computer sent ${limit} today; more tomorrow (Sydney time).` }, 429);
-    await store.set(counterKey, String(count + 1));
+  if (path.endsWith('/licence')) {
+    const id = typeof body.request === 'string' ? body.request.slice(0, 60) : '';
+    const token = typeof body.token === 'string' ? body.token : '';
+    const record = id ? (await store.get(`requests/${id}`, { type: 'json' })) as RequestRecord | null : null;
+    const given = Buffer.from(tokenHash(token));
+    if (!record || record.machine !== machine || given.length !== record.tokenHash.length || !timingSafeEqual(given, Buffer.from(record.tokenHash))) {
+      return json({ error: 'unknown request' }, 404);
+    }
+    return json({ status: record.status, licence: record.status === 'issued' ? record.licence : null });
   }
 
-  const key = `pending/${now.toISOString()}-${randomUUID().slice(0, 8)}`;
-  await store.setJSON(key, report);
-  return json({ ok: true, licensed: licensee !== null, licensee });
+  const request = cleanRequest(body);
+  if (!request) return json({ error: 'not a request' }, 400);
+  const today = sydneyDay();
+  for (const who of [`m-${machine}`, `ip-${ipHash(clientIp(req, context))}`]) {
+    if (!(await countOnce(store, `limits/${today}/request/${who}`, REQUESTS_PER_DAY))) {
+      return json({ error: 'limit', message: `This computer asked ${REQUESTS_PER_DAY} times today; more tomorrow (Sydney time).` }, 429);
+    }
+  }
+  const licence = checkLicence(body.licence ?? null, today, await licenceKeys(store));
+  const record: RequestRecord = {
+    id: `${today}-${randomUUID().slice(0, 8)}`,
+    at: new Date().toISOString(),
+    machine,
+    version: typeof body.version === 'string' ? body.version.slice(0, 40) : '',
+    licensee: licence.valid ? licence.licensee : null,
+    name: request.name,
+    contact: request.contact,
+    players: request.players,
+    message: request.message,
+    tokenHash: tokenHash(request.token),
+    status: 'open',
+  };
+  await store.setJSON(`requests/${record.id}`, record);
+  return json({ ok: true, request: record.id });
 };
 
-export const config = { path: '/api/report' };
+export const config = { path: ['/api/request', '/api/licence'] };

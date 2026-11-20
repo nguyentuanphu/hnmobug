@@ -1,7 +1,7 @@
-// GET /api/reports: the reports waiting to be filed (the hourly GitHub Action and the HNMO Developer page read them).
+// GET /api/reports: the bug reports waiting to be filed (the daily GitHub Action reads them).
 // POST /api/reports {"done": [keys]}: they were filed; they move from pending/ to done/. Both need the hub key
 // (header X-Hub-Key = the site's HUB_KEY setting = the repository's HUB_KEY Actions secret).
-import { getStore } from '@netlify/blobs';
+import { hub } from '../lib/hub.mts';
 import { timingSafeEqual } from 'node:crypto';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -15,7 +15,7 @@ function allowed(req: Request): boolean {
 
 export default async (req: Request) => {
   if (!allowed(req)) return json({ error: 'key' }, 401);
-  const store = getStore({ name: 'hub', consistency: 'strong' });
+  const store = hub();
   if (req.method === 'GET') {
     const { blobs } = await store.list({ prefix: 'pending/' });
     const keys = blobs.map((b) => b.key).sort();
