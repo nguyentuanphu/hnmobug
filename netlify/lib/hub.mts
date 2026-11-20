@@ -2,6 +2,7 @@
 //   hosts/<machine>     the latest weekly report of a server and its last 12 weeks
 //   setups/<machine>    a server's first-setup report: system, game, the host's name and contact, IP and country
 //   seen/<licence id>   the computers a licence was seen on (2 or more: withdrawn by itself)
+//   marks/<machine>     the developer's mark: a test machine of the developer's or a real host
 //   requests/<id>       licence requests (the one-time secret only as a hash)
 //   licences/<id>       licences issued here (withdrawn ones keep their date)
 //   keys/licence        the licence key (lib/keys.mts)
@@ -84,6 +85,7 @@ export interface SetupRecord {
   system: Setup['system'];
   game: Setup['game'];
   host: Setup['host'];
+  test?: boolean;
 }
 
 /** A computer a licence was seen on: its id and the id earlier HNMO versions used for it. */
@@ -123,6 +125,12 @@ export async function withdrawIfShared(store: Store, licence: LicenceRecord, com
   await store.setJSON(`licences/${licence.id}`, { ...licence, revoked: now.toISOString(), revokedReason: reason });
   return true;
 }
+
+/** The developer's mark on a computer (console): one of the developer's test machines, or a real host. */
+export interface MachineMark { machine: string; test: boolean; at: string }
+
+/** Whether a computer is a test machine: the developer's mark first, else what the server said (HNMO_TEST_HOST). */
+export const isTestMachine = (said: boolean | undefined, mark: MachineMark | undefined): boolean => mark ? mark.test : said === true;
 
 export interface Device { id: string; name: string; added: string; lastSeen: string }
 

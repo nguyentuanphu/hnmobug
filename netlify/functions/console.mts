@@ -2,12 +2,12 @@
 // the cover site). Sign-in: the password always; on a browser not yet trusted also the authenticator code, after which
 // the browser is trusted for 30 days. The first visit sets the password (with the hub key as proof) and makes the
 // authenticator key. API under /c/<slug>/api/: status, setup, login, logout, state, make-key, issue, decline, revoke,
-// forget-device. Every change needs the session cookie and the X-Console header (no cross-site requests).
+// forget-device, mark (a test machine or a real host). Every change needs the session cookie and the X-Console header (no cross-site requests).
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
 import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../lib/keys.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type RequestRecord, type SeenRecord, type SetupRecord, type Store } from '../lib/hub.mts';
+import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
 
 interface Session { exp: number; d: string }
@@ -103,22 +103,24 @@ export default async (req: Request, context: { ip?: string }) => {
 
   if (action === 'state' && req.method === 'GET') {
     const key = await licenceKey(store);
-    const [hosts, requests, licences, devices, setups, seen] = await Promise.all([
+    const [hosts, requests, licences, devices, setups, seen, marks] = await Promise.all([
       listJson<HostRecord>(store, 'hosts/'),
       listJson<RequestRecord>(store, 'requests/'),
       listJson<LicenceRecord>(store, 'licences/'),
       listJson<Device>(store, 'devices/'),
       listJson<SetupRecord>(store, 'setups/'),
       listJson<SeenRecord>(store, 'seen/'),
+      listJson<MachineMark>(store, 'marks/'),
     ]);
+    const markOf = (machine: string) => marks.find((m) => m.machine === machine);
     const { blobs } = await store.list({ prefix: 'pending/' });
     return json({
       today: sydneyDay(),
       licenceKey: key ? { publicPem: key.publicPem, made: key.made } : null,
-      hosts: hosts.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen)),
+      hosts: hosts.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen)).map((h) => ({ ...h, test: isTestMachine(h.latest.test, markOf(h.machine)), marked: !!markOf(h.machine) })),
       requests: requests.map(({ tokenHash: _hidden, ...r }) => r).sort((a, b) => b.at.localeCompare(a.at)),
       licences: licences.sort((a, b) => b.issued.localeCompare(a.issued)).map(({ file, ...l }) => ({ ...l, file, computers: seen.find((s) => s.licenceId === l.id)?.computers ?? [] })),
-      setups: setups.sort((a, b) => b.at.localeCompare(a.at)),
+      setups: setups.sort((a, b) => b.at.localeCompare(a.at)).map((s) => ({ ...s, test: isTestMachine(s.test, markOf(s.machine)), marked: !!markOf(s.machine) })),
       devices: devices.map((d) => ({ ...d, current: d.id === session.d })),
       pendingBugs: blobs.length,
       issuesUrl: process.env.ISSUES_URL || '',
@@ -175,6 +177,16 @@ export default async (req: Request, context: { ip?: string }) => {
       ? { ...record, revoked: null, revokedReason: null, manyComputers: record.manyComputers === true || !!record.revokedReason }
       : { ...record, revoked: new Date().toISOString(), revokedReason: null });
     return json({ ok: true });
+  }
+
+  // The developer marks computers as test machines or real hosts (one, or several at once).
+  if (action === 'mark') {
+    const list = Array.isArray(body.machines) ? body.machines : [body.machine];
+    const machines = list.map((m) => cleanText(m, 32).toLowerCase()).filter((m) => /^[0-9a-f]{8,32}$/.test(m)).slice(0, 500);
+    if (!machines.length || typeof body.test !== 'boolean') return json({ error: 'machine and test' }, 400);
+    const at = new Date().toISOString();
+    for (const machine of machines) await store.setJSON(`marks/${machine}`, { machine, test: body.test, at } satisfies MachineMark);
+    return json({ ok: true, marked: machines.length });
   }
 
   if (action === 'forget-device') {

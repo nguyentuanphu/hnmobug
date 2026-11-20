@@ -55,6 +55,11 @@ export interface Weekly {
   players: { peak: number; limit: number; accounts: number; characters: number; online: number; graceStarted: string | null };
   health: { crashes: number; errors: number; integrity: string };
   features: { season9: boolean; arena: boolean; expRate: number; dropRate: number; plugins: string[] };
+  /** The MU's name players see, and its host's name and contact (the host fills them in on the setup page). */
+  game: { name: string };
+  host: { name: string; contact: string };
+  /** The server says it is one of the developer's test machines (HNMO_TEST_HOST=1). */
+  test: boolean;
   bugs: Bug[];
 }
 
@@ -82,6 +87,9 @@ export function cleanWeekly(value: unknown): Weekly | null {
       dropRate: num(features.dropRate, 1e6),
       plugins: Array.isArray(features.plugins) ? features.plugins.map((p) => cut(p, 60)).filter(Boolean).slice(0, 300) : [],
     },
+    game: { name: cut(((b.game ?? {}) as Record<string, unknown>).name, 80) },
+    host: { name: cut(((b.host ?? {}) as Record<string, unknown>).name, 80), contact: cut(((b.host ?? {}) as Record<string, unknown>).contact, 120) },
+    test: flag(b.test),
     bugs: Array.isArray(b.bugs) ? b.bugs.slice(0, 50).map(cleanBug).filter((x): x is Bug => x !== null) : [],
   };
 }
@@ -90,6 +98,7 @@ export interface Setup {
   system: { os: string; arch: string; cpu: string; cores: number; ramGb: number; freeDiskGb: number | null; dotnet: string };
   game: { name: string; servers: number[]; seasons: string[]; publicAddress: string; language: string };
   host: { name: string; contact: string };
+  test: boolean;
 }
 
 const gb = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1e6, Math.round(value * 10) / 10)) : 0);
@@ -115,6 +124,7 @@ export function cleanSetup(value: unknown): Setup | null {
       language: cut(game.language, 20),
     },
     host: { name: cut(host.name, 80), contact: cut(host.contact, 120) },
+    test: flag(b.test),
   };
 }
 

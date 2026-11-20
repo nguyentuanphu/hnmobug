@@ -259,3 +259,31 @@ test('the first-setup report keeps the system, the game, the host and the IP wit
   assert.equal(answer.status, 'open');
   useStoreForTests(null);
 });
+
+test('the weekly report names the MU and its host; test machines are told apart, by the server or the developer', async () => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  const base = `/c/${process.env.CONSOLE_SLUG}`;
+  const code = totpCode(process.env.CONSOLE_TOTP_SECRET!, Math.floor(Date.now() / 30_000));
+  const signedIn = await consoleFn(post(`${base}/api/login`, { password: 'correct horse battery', code }, { 'X-Console': '1' }), ctx);
+  const jar = signedIn.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ');
+  const as = { 'X-Console': '1', cookie: jar };
+  const REAL = '1111222233334444', DEV = '5555666677778888';
+  await weeklyFn(post('/api/weekly', { machine: REAL, version: '1.0', game: { name: 'Mu Rồng Vàng' }, host: { name: 'Minh', contact: 'zalo 0900' } }), ctx);
+  await weeklyFn(post('/api/weekly', { machine: DEV, version: '1.0', test: true }), ctx);
+  type Host = { machine: string; test: boolean; latest: { game: { name: string }; host: { name: string; contact: string } } };
+  const hosts = async () => (await (await consoleFn(new Request(`https://hub.example${base}/api/state`, { headers: { cookie: jar } }), ctx)).json() as { hosts: Host[] }).hosts;
+  let list = await hosts();
+  const real = list.find((h) => h.machine === REAL)!;
+  assert.deepEqual([real.test, real.latest.game.name, real.latest.host.name, real.latest.host.contact], [false, 'Mu Rồng Vàng', 'Minh', 'zalo 0900']);
+  assert.equal(list.find((h) => h.machine === DEV)!.test, true, 'the server said it is a test machine');
+
+  // The developer's mark wins, for one or several at once, and survives the next report.
+  await consoleFn(post(`${base}/api/mark`, { machines: [REAL, DEV], test: true }, as), ctx);
+  assert.deepEqual((await hosts()).map((h) => h.test), [true, true]);
+  await consoleFn(post(`${base}/api/mark`, { machine: DEV, test: false }, as), ctx);
+  list = await hosts();
+  assert.equal(list.find((h) => h.machine === DEV)!.test, false, 'marked real although the server says test');
+  assert.equal((await consoleFn(post(`${base}/api/mark`, { machine: 'nope', test: true }, as), ctx)).status, 400);
+  useStoreForTests(null);
+});

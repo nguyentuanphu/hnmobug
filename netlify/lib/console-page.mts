@@ -36,6 +36,18 @@ th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); 
 pre { white-space:pre-wrap; word-break:break-all; font-size:12px; background:var(--bg); padding:8px; border-radius:6px; }
 #login { max-width:360px; margin:12vh auto; }
 #login label { display:block; margin:10px 0 4px; }
+.host { display:flex; flex-direction:column; gap:8px; }
+.host-head { display:flex; gap:8px; align-items:flex-start; justify-content:space-between; }
+.host-name { font-size:17px; font-weight:600; line-height:1.25; }
+.badge { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 10px; font-size:12px; white-space:nowrap; }
+.badge.ok { border-color:var(--ok); } .badge.bad { border-color:var(--bad); } .badge.warn { border-color:var(--warn); }
+.stats { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px 12px; font-size:14px; }
+@media (min-width:700px) { .stats { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+.stats .k { color:var(--muted); font-size:12px; display:block; }
+details summary { cursor:pointer; color:var(--muted); font-size:13px; }
+details .muted { word-break:break-word; }
+.row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+@media (max-width:520px) { main { padding:10px; } .card { padding:12px; } header { padding:10px 12px; } }
 </style></head>
 <body>
 <header><h1>HNMO console</h1><button id="lang" type="button">EN</button><button id="logout" type="button" hidden></button></header>
@@ -73,23 +85,25 @@ pre { white-space:pre-wrap; word-break:break-all; font-size:12px; background:var
 const BASE = ${JSON.stringify(base)};
 const T = {
   en: { setupTitle:'First use: set your sign-in', setupHint:'Paste the hub key (HUB_KEY from the site settings) to prove it is you, and choose the console password. This is asked only once.', hubKey:'Hub key (HUB_KEY)', newPassword:'New password (12 characters or more)', again:'The password again', setupSave:'Save', differ:'The two passwords differ or are shorter than 12 characters.', appTitle:'Add the console to your authenticator app', appHint:'In Google Authenticator or Microsoft Authenticator: add an account, choose "Enter a setup key", name it HNMO console, and type the key below (time based). Then type the 6-digit code it shows.', appKey:'Key:', appLink:'or open this link on the phone', password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
-    hosts:'Servers', setups:'First setups', requests:'Licence requests', licences:'Licences', bugs:'Bug reports', security:'Security',
+    hosts:'Servers', real:'Real hosts', test:'Test machines', setups:'First setups', requests:'Licence requests', licences:'Licences', bugs:'Bug reports', security:'Security',
     lastSeen:'Last report', licence:'Licence', version:'Version', players:'Players (most at once / limit)', accounts:'Accounts / characters', health:'Crashes / errors this week', files:'Files', features:'Features',
     none:'None yet.', free:'free (10 players)', issue:'Issue a licence', decline:'Decline', revoke:'Withdraw', undo:'Give back', name:'Name', contact:'Contact', asked:'Players asked', note:'Note', machine:'Computer id', expires:'Last day (empty: none)', maxPlayers:'Players at once', bind:'Only this computer',
     open:'waiting', issued:'issued', declined:'declined', withdrawn:'withdrawn', copy:'Copy file', copied:'Copied', pending:'reports wait for the daily filing as issues', openIssues:'Open the issues',
     makeKey:'Make the licence key', keyMade:'Licence key made', keyHint:'Give this public key to Claude to put into HNMO (licence-pub.pem), once:', devices:'Trusted browsers', forget:'Remove', thisOne:'this browser', saved:'Done.', grace:'over the limit since', uptime:'Up', os:'System', integrity:{ok:'unchanged', modified:'MODIFIED', unsigned:'unsigned build', unknown:'unknown'},
-    host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id' },
+    host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id',
+    noMuName:'(no MU name yet)', noHost:'host not filled in', markTest:'It is a test machine', markReal:'It is a real host', allTest:'Mark every real host here as a test machine', allTestAsk:'Mark all these as your test machines?', details:'Details', firstSetup:'First setup', noReport:'no weekly report yet', machineId:'Machine id', plugins:'plug-ins', reportsSent:'bug reports', none2:'No test machines.' },
   vi: { setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
-    hosts:'Server', setups:'Cài đặt lần đầu', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
+    hosts:'Server', real:'Máy thật', test:'Máy test', setups:'Cài đặt lần đầu', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
     lastSeen:'Báo cáo gần nhất', licence:'Giấy phép', version:'Phiên bản', players:'Người chơi (cao nhất / giới hạn)', accounts:'Tài khoản / nhân vật', health:'Sập / lỗi tuần này', files:'File', features:'Tính năng',
     none:'Chưa có.', free:'miễn phí (10 người)', issue:'Cấp giấy phép', decline:'Từ chối', revoke:'Thu hồi', undo:'Trả lại', name:'Tên', contact:'Liên lạc', asked:'Số người xin', note:'Ghi chú', machine:'Mã máy', expires:'Ngày cuối (trống: không hạn)', maxPlayers:'Số người cùng lúc', bind:'Chỉ máy này',
     open:'đang chờ', issued:'đã cấp', declined:'đã từ chối', withdrawn:'đã thu hồi', copy:'Copy file', copied:'Đã copy', pending:'báo lỗi chờ được chuyển thành issue mỗi ngày', openIssues:'Mở danh sách issue',
     makeKey:'Tạo khóa giấy phép', keyMade:'Đã có khóa giấy phép', keyHint:'Đưa public key này cho Claude để đặt vào HNMO (licence-pub.pem), một lần:', devices:'Trình duyệt tin cậy', forget:'Xóa', thisOne:'trình duyệt này', saved:'Xong.', grace:'vượt giới hạn từ', uptime:'Chạy', os:'Hệ điều hành', integrity:{ok:'nguyên vẹn', modified:'BỊ SỬA', unsigned:'bản chưa ký', unknown:'chưa rõ'},
-    host:'Chủ server', system:'Hệ thống', game:'Game', place:'IP và quốc gia', autoWithdrawn:'tự thu hồi', computers:'Các máy đã thấy', manyOk:'cho phép nhiều máy', sentTimes:'lần gửi', oldId:'mã cũ' },
+    host:'Chủ server', system:'Hệ thống', game:'Game', place:'IP và quốc gia', autoWithdrawn:'tự thu hồi', computers:'Các máy đã thấy', manyOk:'cho phép nhiều máy', sentTimes:'lần gửi', oldId:'mã cũ',
+    noMuName:'(chưa có tên MU)', noHost:'chưa điền chủ server', markTest:'Đây là máy test', markReal:'Đây là máy thật', allTest:'Đánh dấu tất cả máy ở đây là máy test', allTestAsk:'Đánh dấu tất cả những máy này là máy test của anh?', details:'Chi tiết', firstSetup:'Cài đặt lần đầu', noReport:'chưa có báo cáo tuần', machineId:'Mã máy', plugins:'plug-in', reportsSent:'báo lỗi', none2:'Không có máy test.' },
 };
 let lang = (() => { try { return localStorage.getItem('hnmo-console-lang') || 'vi'; } catch { return 'vi'; } })();
 const t = (k) => T[lang][k] ?? T.en[k] ?? k;
-let state = null, tab = 'hosts';
+let state = null, tab = 'real';
 const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'on') for (const [ev, fn] of Object.entries(v)) e.addEventListener(ev, fn); else if (k === 'text') e.textContent = v; else e.setAttribute(k, v); } for (const kid of kids) if (kid != null) e.append(kid); return e; };
 const when = (iso) => iso ? new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'en-AU', { timeZone:'Australia/Sydney', dateStyle:'medium', timeStyle:'short' }).format(new Date(iso)) : '';
 async function api(action, body) {
@@ -108,49 +122,16 @@ function render() {
   labels();
   const tabs = document.getElementById('tabs'); tabs.replaceChildren();
   const openRequests = state.requests.filter((r) => r.status === 'open').length;
-  for (const id of ['hosts', 'setups', 'requests', 'licences', 'bugs', 'security']) {
-    const label = t(id) + (id === 'requests' && openRequests ? ' (' + openRequests + ')' : id === 'hosts' ? ' (' + state.hosts.length + ')' : id === 'setups' ? ' (' + state.setups.length + ')' : '');
+  const counts = { real: machines(false).length, test: machines(true).length };
+  for (const id of ['real', 'test', 'requests', 'licences', 'bugs', 'security']) {
+    const label = t(id) + (id === 'requests' && openRequests ? ' (' + openRequests + ')' : id in counts ? ' (' + counts[id] + ')' : '');
     tabs.append(el('button', { type:'button', 'aria-pressed': String(tab === id), text: label, on:{ click:() => { tab = id; render(); } } }));
   }
   const view = document.getElementById('view'); view.replaceChildren(VIEWS[tab]());
 }
 const VIEWS = {
-  hosts() {
-    if (!state.hosts.length) return el('p', { class:'muted', text:t('none') });
-    const table = el('table', {}, el('thead', {}, el('tr', {}, ...['licence', 'lastSeen', 'version', 'players', 'accounts', 'health', 'files', 'features'].map((k) => el('th', { text:t(k) })))));
-    const body = el('tbody');
-    for (const h of state.hosts) {
-      const p = h.latest.players, f = h.latest.features, hl = h.latest.health;
-      const lic = h.licensee ? h.licensee + (h.licenceExpires ? ' → ' + h.licenceExpires : '') : t('free');
-      body.append(el('tr', {},
-        el('td', {}, el('div', { text: lic, class: h.licenceProblem ? 'bad' : '' }), el('div', { class:'muted', text: h.machine + (h.licenceProblem ? ' · ' + h.licenceProblem : '') })),
-        el('td', {}, el('div', { text: when(h.lastSeen) }), el('div', { class:'muted', text: t('os') + ': ' + h.latest.os + ' · ' + t('uptime') + ' ' + h.latest.uptimeHours + ' h' })),
-        el('td', { text: h.latest.version }),
-        el('td', {}, el('div', { text: p.peak + ' / ' + (p.limit || 10), class: p.peak > (p.limit || 10) ? 'bad' : '' }), p.graceStarted ? el('div', { class:'warn', text: t('grace') + ' ' + when(p.graceStarted) }) : null),
-        el('td', { text: p.accounts + ' / ' + p.characters }),
-        el('td', { text: hl.crashes + ' / ' + hl.errors, class: hl.crashes ? 'warn' : '' }),
-        el('td', { text: t('integrity')[hl.integrity] ?? hl.integrity, class: hl.integrity === 'modified' ? 'bad' : hl.integrity === 'ok' ? 'ok' : '' }),
-        el('td', {}, el('div', { text: [f.season9 ? 'Season 9' : '', f.arena ? 'Arena' : '', 'EXP ' + f.expRate, f.dropRate ? 'drop ' + f.dropRate : ''].filter(Boolean).join(' · ') }), el('div', { class:'muted', text: f.plugins.length + ' plug-ins · ' + h.bugsSent + ' ' + t('bugs').toLowerCase() }))));
-    }
-    table.append(body);
-    return el('div', { class:'card table' }, table);
-  },
-  setups() {
-    if (!state.setups.length) return el('p', { class:'muted', text:t('none') });
-    const table = el('table', {}, el('thead', {}, el('tr', {}, ...['host', 'place', 'system', 'game', 'lastSeen'].map((k) => el('th', { text:t(k) })))));
-    const body = el('tbody');
-    for (const s of state.setups) {
-      const sy = s.system, g = s.game;
-      body.append(el('tr', {},
-        el('td', {}, el('div', { text: s.host.name || '-' }), el('div', { class:'muted', text: (s.host.contact || '-') }), el('div', { class:'muted', text: s.machine + (s.legacyMachine ? ' · ' + t('oldId') + ' ' + s.legacyMachine : '') + (s.licensee ? ' · ' + s.licensee : '') })),
-        el('td', {}, el('div', { text: s.ip || '-' }), el('div', { class:'muted', text: s.country || '-' })),
-        el('td', {}, el('div', { text: sy.os + ' · ' + sy.arch }), el('div', { class:'muted', text: sy.cpu + ' · ' + sy.cores + ' cores · ' + sy.ramGb + ' GB RAM · ' + (sy.freeDiskGb ?? '?') + ' GB free · ' + sy.dotnet + ' · HNMO ' + s.version })),
-        el('td', {}, el('div', { text: g.name }), el('div', { class:'muted', text: [g.seasons.join(', '), g.servers.length + ' servers', g.publicAddress, g.language].filter(Boolean).join(' · ') })),
-        el('td', {}, el('div', { text: when(s.at) }), el('div', { class:'muted', text: s.times + ' ' + t('sentTimes') + ' · ' + when(s.firstAt) }))));
-    }
-    table.append(body);
-    return el('div', { class:'card table' }, table);
-  },
+  real() { return machineList(false); },
+  test() { return machineList(true); },
   requests() {
     const wrap = el('div');
     if (!state.requests.length) wrap.append(el('p', { class:'muted', text:t('none') }));
@@ -190,6 +171,69 @@ const VIEWS = {
     return wrap;
   },
 };
+const short = (iso) => iso ? new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'en-AU', { timeZone:'Australia/Sydney', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).format(new Date(iso)) : '';
+/** Every computer once: its weekly report and its first-setup report together, real hosts or test machines. */
+function machines(test) {
+  const all = new Map();
+  for (const h of state.hosts) all.set(h.machine, { machine: h.machine, host: h, setup: null, test: h.test, at: h.lastSeen });
+  for (const s of state.setups) {
+    const m = all.get(s.machine) || { machine: s.machine, host: null, setup: null, test: s.test, at: s.at };
+    m.setup = s; m.test = m.host ? (m.host.marked ? m.host.test : (s.marked ? s.test : m.host.test || s.test)) : s.test;
+    if (s.at > m.at) m.at = s.at;
+    all.set(s.machine, m);
+  }
+  return [...all.values()].filter((m) => !!m.test === test).sort((a, b) => b.at.localeCompare(a.at));
+}
+function stat(key, value, cls) { return el('div', {}, el('span', { class:'k', text: t(key) }), el('span', { class: cls || '', text: value })); }
+function machineCard(m) {
+  const h = m.host, s = m.setup, latest = h ? h.latest : null;
+  const muName = (latest && latest.game && latest.game.name) || (s && s.game.name) || '';
+  const hostName = (latest && latest.host && latest.host.name) || (s && s.host.name) || '';
+  const contact = (latest && latest.host && latest.host.contact) || (s && s.host.contact) || '';
+  const licence = h && h.licensee ? h.licensee + (h.licenceExpires ? ' → ' + h.licenceExpires : '') : (s && s.licensee) || t('free');
+  const card = el('div', { class:'card host' });
+  card.append(el('div', { class:'host-head' },
+    el('div', {}, el('div', { class:'host-name', text: muName || t('noMuName') }),
+      el('div', { class: hostName ? '' : 'warn', text: hostName ? '👤 ' + hostName + (contact ? ' · ' + contact : '') : t('noHost') })),
+    el('span', { class:'badge ' + (h && h.licenceProblem ? 'bad' : h && h.licensee ? 'ok' : ''), text: licence })));
+  if (s) card.append(el('div', { class:'muted', text: '🌐 ' + (s.ip || '-') + (s.country ? ' · ' + s.country : '') }));
+  if (h) {
+    const p = latest.players, hl = latest.health;
+    card.append(el('div', { class:'stats' },
+      stat('players', p.peak + ' / ' + (p.limit || 10), p.peak > (p.limit || 10) ? 'bad' : ''),
+      stat('accounts', p.accounts + ' / ' + p.characters),
+      stat('health', hl.crashes + ' / ' + hl.errors, hl.crashes ? 'warn' : ''),
+      stat('files', t('integrity')[hl.integrity] ?? hl.integrity, hl.integrity === 'modified' ? 'bad' : hl.integrity === 'ok' ? 'ok' : ''),
+      stat('version', latest.version || '-'),
+      stat('lastSeen', short(h.lastSeen))));
+    if (p.graceStarted) card.append(el('div', { class:'warn', text: t('grace') + ' ' + when(p.graceStarted) }));
+    if (h.licenceProblem) card.append(el('div', { class:'bad', text: h.licenceProblem }));
+  } else card.append(el('div', { class:'muted', text: t('noReport') }));
+  const info = [];
+  if (h) {
+    const f = latest.features;
+    info.push(t('os') + ': ' + latest.os + ' · ' + t('uptime') + ' ' + latest.uptimeHours + ' h');
+    info.push(t('features') + ': ' + [f.season9 ? 'Season 9' : '', f.arena ? 'Arena' : '', 'EXP ' + f.expRate, f.dropRate ? 'drop ' + f.dropRate : ''].filter(Boolean).join(' · ') + ' · ' + f.plugins.length + ' ' + t('plugins') + ' · ' + h.bugsSent + ' ' + t('reportsSent'));
+  }
+  if (s) {
+    const sy = s.system, g = s.game;
+    info.push(t('system') + ': ' + sy.os + ' · ' + sy.arch + ' · ' + sy.cpu + ' · ' + sy.cores + ' cores · ' + sy.ramGb + ' GB RAM · ' + (sy.freeDiskGb ?? '?') + ' GB free · ' + sy.dotnet);
+    info.push(t('game') + ': ' + [g.seasons.join(', '), g.servers.length + ' servers', g.publicAddress, g.language].filter(Boolean).join(' · '));
+    info.push(t('firstSetup') + ': ' + when(s.firstAt) + ' · ' + s.times + ' ' + t('sentTimes'));
+  }
+  info.push(t('machineId') + ': ' + m.machine + (s && s.legacyMachine ? ' · ' + t('oldId') + ' ' + s.legacyMachine : ''));
+  card.append(el('details', {}, el('summary', { text: t('details') }), ...info.map((line) => el('div', { class:'muted', text: line }))));
+  card.append(el('div', { class:'row' }, el('button', { type:'button', text: m.test ? t('markReal') : t('markTest'), on:{ click: async () => { await api('mark', { machine: m.machine, test: !m.test }); await load(); } } })));
+  return card;
+}
+function machineList(test) {
+  const list = machines(test);
+  const wrap = el('div');
+  if (!list.length) { wrap.append(el('p', { class:'muted', text: test ? t('none2') : t('none') })); return wrap; }
+  if (!test) wrap.append(el('div', { class:'row', style:'margin-bottom:12px' }, el('button', { type:'button', text: t('allTest'), on:{ click: async () => { if (!confirm(t('allTestAsk'))) return; await api('mark', { machines: list.map((m) => m.machine), test: true }); await load(); } } })));
+  for (const m of list) wrap.append(machineCard(m));
+  return wrap;
+}
 function issueForm(start) {
   const f = el('form', { class:'grid' });
   const field = (key, input) => el('label', {}, el('span', { class:'muted', text: t(key) }), input);
