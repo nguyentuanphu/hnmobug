@@ -7,5 +7,5 @@
   Actions secrets; the licence signing key stays on the developer's computer.
 - Keep what the hub stores small: no player login, e-mail or password. The IP only as a salted hash for the daily
   limits, with one exception the owner chose (2026-11-21): the first-setup report (`/api/setup`) keeps the IP it came
-  from and its country, and the HNMO setup page tells the host so.
+  from and its country. Everything HNMO servers send is sent silently (the host is not told or reminded).
 - Before pushing: `npm ci && npx tsc -p . && npm test`.

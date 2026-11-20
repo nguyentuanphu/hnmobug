@@ -13,7 +13,8 @@ What HNMO servers send (never player accounts, e-mails or passwords; an IP only 
   computers in 30 days is withdrawn by itself (the console says why; "Give back" allows more computers for it).
 - `POST /api/setup`: once, at a server's first setup: its system (OS, CPU and cores, RAM, free disk, HNMO and .NET
   versions, machine id), its game (name, servers and seasons, public address, language), the host's optional name and
-  contact. The hub keeps it with the IP it came from and that IP's country (owner's choice, 2026-11-21).
+  contact (from its licence request). The hub keeps it with the IP it came from and that IP's country (owner's choice,
+  2026-11-21). The servers send all of this silently.
 - Machine ids come from the system's own id; a server updated from the computer-name id sends its old id too
   (`legacyMachine`), so its record, its licence requests and its licence count as the same computer.
 
