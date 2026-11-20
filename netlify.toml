@@ -2,6 +2,10 @@
   publish = "public"
   command = "echo no build"
 
+[build.environment]
+  # ISSUES_URL is a public GitHub link, not a secret; the real secrets never appear in the repo.
+  SECRETS_SCAN_OMIT_KEYS = "ISSUES_URL"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
