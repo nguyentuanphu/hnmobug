@@ -64,8 +64,10 @@ test('the licence key signs licences HNMO can read; its private half is stored e
 });
 
 test('what a weekly report and a request keep', () => {
-  const weekly = cleanWeekly({ version: '1.0', players: { peak: 12.4, limit: 10, accounts: 30 }, health: { integrity: 'evil' }, features: { season9: true, plugins: ['A', 5] }, bugs: [{ text: 'short' }, { text: 'Twisting Slash shows no effect', category: 'skill' }], email: 'x@y' })!;
+  const weekly = cleanWeekly({ version: '1.0', players: { peak: 12.4, limit: 10, accounts: 30, graceStarted: '2026-11-20T07:00:00.0000000Z' }, health: { integrity: 'evil' }, features: { season9: true, plugins: ['A', 5] }, bugs: [{ text: 'short' }, { text: 'Twisting Slash shows no effect', category: 'skill' }], email: 'x@y' })!;
   assert.equal(weekly.players.peak, 12);
+  assert.equal(weekly.players.graceStarted, '2026-11-20T07:00:00.0000000Z');
+  assert.equal(cleanWeekly({ players: { graceStarted: '<script>' } })!.players.graceStarted, null);
   assert.equal(weekly.health.integrity, 'unknown');
   assert.deepEqual(weekly.features.plugins, ['A']);
   assert.equal(weekly.bugs.length, 1);

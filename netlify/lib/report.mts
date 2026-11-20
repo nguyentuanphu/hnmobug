@@ -51,7 +51,7 @@ export interface Weekly {
   version: string;
   os: string;
   uptimeHours: number;
-  players: { peak: number; limit: number; accounts: number; characters: number; online: number };
+  players: { peak: number; limit: number; accounts: number; characters: number; online: number; graceStarted: string | null };
   health: { crashes: number; errors: number; integrity: string };
   features: { season9: boolean; arena: boolean; expRate: number; dropRate: number; plugins: string[] };
   bugs: Bug[];
@@ -69,7 +69,10 @@ export function cleanWeekly(value: unknown): Weekly | null {
     version: cut(b.version, 40),
     os: cut(b.os, 80),
     uptimeHours: num(b.uptimeHours, 24 * 3650),
-    players: { peak: num(players.peak, 100000), limit: num(players.limit, 100000), accounts: num(players.accounts), characters: num(players.characters), online: num(players.online, 100000) },
+    players: {
+      peak: num(players.peak, 100000), limit: num(players.limit, 100000), accounts: num(players.accounts), characters: num(players.characters), online: num(players.online, 100000),
+      graceStarted: /^\d{4}-\d{2}-\d{2}T[\d:.]+Z?$/.test(cut(players.graceStarted, 40)) ? cut(players.graceStarted, 40) : null,
+    },
     health: { crashes: num(health.crashes, 100000), errors: num(health.errors, 1e7), integrity: ['ok', 'modified', 'unsigned', 'unknown'].includes(integrity) ? integrity : 'unknown' },
     features: {
       season9: flag(features.season9),
