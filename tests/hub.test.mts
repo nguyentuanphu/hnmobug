@@ -14,6 +14,7 @@ import consoleFn from '../netlify/functions/console.mts';
 import requestFn from '../netlify/functions/report.mts';
 import weeklyFn from '../netlify/functions/weekly.mts';
 import setupFn from '../netlify/functions/setup.mts';
+import latestFn from '../netlify/functions/latest.mts';
 
 process.env.SESSION_SECRET = 's'.repeat(40);
 process.env.LICENCE_KEY_SECRET = 'k'.repeat(40);
@@ -285,5 +286,25 @@ test('the weekly report names the MU and its host; test machines are told apart,
   list = await hosts();
   assert.equal(list.find((h) => h.machine === DEV)!.test, false, 'marked real although the server says test');
   assert.equal((await consoleFn(post(`${base}/api/mark`, { machine: 'nope', test: true }, as), ctx)).status, 400);
+  useStoreForTests(null);
+});
+
+test('the newest release: set in the console, read by HNMO servers at /api/latest, none while the link is empty', async () => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  const base = `/c/${process.env.CONSOLE_SLUG}`;
+  const code = totpCode(process.env.CONSOLE_TOTP_SECRET!, Math.floor(Date.now() / 30_000));
+  const signedIn = await consoleFn(post(`${base}/api/login`, { password: 'correct horse battery', code }, { 'X-Console': '1' }), ctx);
+  const as = { 'X-Console': '1', cookie: signedIn.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ') };
+  assert.equal((await latestFn(new Request('https://hub.example/api/latest'))).status, 404, 'none yet');
+  assert.equal((await consoleFn(post(`${base}/api/latest`, { tag: 'v1', url: 'http://plain.example/HNMO.zip' }, as), ctx)).status, 400, 'https only');
+  await consoleFn(post(`${base}/api/latest`, { tag: 'v1.2', url: 'https://downloads.example/HNMO.zip', notes: 'Arena' }, as), ctx);
+  const latest = await (await latestFn(new Request('https://hub.example/api/latest'))).json() as Record<string, string>;
+  assert.equal(latest.tag_name, 'v1.2');
+  assert.equal(latest.html_url, 'https://downloads.example/HNMO.zip');
+  assert.equal(latest.body, 'Arena');
+  assert.ok(latest.published_at);
+  await consoleFn(post(`${base}/api/latest`, { url: '' }, as), ctx);
+  assert.equal((await latestFn(new Request('https://hub.example/api/latest'))).status, 404, 'cleared');
   useStoreForTests(null);
 });

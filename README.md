@@ -15,6 +15,8 @@ What HNMO servers send (never player accounts, e-mails or passwords; an IP only 
   versions, machine id), its game (name, servers and seasons, public address, language), the host's optional name and
   contact (from its licence request). The hub keeps it with the IP it came from and that IP's country (owner's choice,
   2026-11-21). The servers send all of this silently.
+- `GET /api/latest`: the newest HNMO release the developer set in the console (Security): HNMO servers' update check
+  and their website's "Download HNMO" link read it, so no HNMO folder points at where HNMO is built.
 - Machine ids come from the system's own id; a server updated from the computer-name id sends its old id too
   (`legacyMachine`), so its record, its licence requests and its licence count as the same computer.
 

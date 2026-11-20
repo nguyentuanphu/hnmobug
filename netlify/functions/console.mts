@@ -2,7 +2,7 @@
 // the cover site). Sign-in: the password always; on a browser not yet trusted also the authenticator code, after which
 // the browser is trusted for 30 days. The first visit sets the password (with the hub key as proof) and makes the
 // authenticator key. API under /c/<slug>/api/: status, setup, login, logout, state, make-key, issue, decline, revoke,
-// forget-device, mark (a test machine or a real host). Every change needs the session cookie and the X-Console header (no cross-site requests).
+// forget-device, mark (a test machine or a real host), latest (the newest release HNMO servers are told about). Every change needs the session cookie and the X-Console header (no cross-site requests).
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
 import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../lib/keys.mts';
@@ -124,6 +124,7 @@ export default async (req: Request, context: { ip?: string }) => {
       devices: devices.map((d) => ({ ...d, current: d.id === session.d })),
       pendingBugs: blobs.length,
       issuesUrl: process.env.ISSUES_URL || '',
+      latest: (await store.get('config/latest', { type: 'json' })) ?? null,
     });
   }
 
@@ -187,6 +188,20 @@ export default async (req: Request, context: { ip?: string }) => {
     const at = new Date().toISOString();
     for (const machine of machines) await store.setJSON(`marks/${machine}`, { machine, test: body.test, at } satisfies MachineMark);
     return json({ ok: true, marked: machines.length });
+  }
+
+  // The newest HNMO release: what servers' update check and their website's download link get (/api/latest).
+  if (action === 'latest') {
+    const tag = cleanText(body.tag, 40);
+    const url = cleanText(body.url, 500);
+    if (url && !/^https:\/\/[^\s]+$/.test(url)) return json({ error: 'The link starts with https://.' }, 400);
+    if (!url) {
+      await store.delete('config/latest');
+      return json({ ok: true, latest: null });
+    }
+    const latest = { tag: tag || 'latest', url, notes: cleanText(body.notes, 4000), published: new Date().toISOString() };
+    await store.setJSON('config/latest', latest);
+    return json({ ok: true, latest });
   }
 
   if (action === 'forget-device') {

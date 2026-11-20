@@ -91,7 +91,7 @@ const T = {
     open:'waiting', issued:'issued', declined:'declined', withdrawn:'withdrawn', copy:'Copy file', copied:'Copied', pending:'reports wait for the daily filing as issues', openIssues:'Open the issues',
     makeKey:'Make the licence key', keyMade:'Licence key made', keyHint:'Give this public key to Claude to put into HNMO (licence-pub.pem), once:', devices:'Trusted browsers', forget:'Remove', thisOne:'this browser', saved:'Done.', grace:'over the limit since', uptime:'Up', os:'System', integrity:{ok:'unchanged', modified:'MODIFIED', unsigned:'unsigned build', unknown:'unknown'},
     host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id',
-    noMuName:'(no MU name yet)', noHost:'host not filled in', markTest:'It is a test machine', markReal:'It is a real host', allTest:'Mark every real host here as a test machine', allTestAsk:'Mark all these as your test machines?', details:'Details', firstSetup:'First setup', noReport:'no weekly report yet', machineId:'Machine id', plugins:'plug-ins', reportsSent:'bug reports', none2:'No test machines.' },
+    noMuName:'(no MU name yet)', noHost:'host not filled in', markTest:'It is a test machine', markReal:'It is a real host', allTest:'Mark every real host here as a test machine', allTestAsk:'Mark all these as your test machines?', details:'Details', firstSetup:'First setup', noReport:'no weekly report yet', latestTitle:'Newest HNMO release', latestHint:'HNMO servers check for updates here and their website’s "Download HNMO" goes to this link. Empty link: none.', latestTag:'Version', latestUrl:'Download link (https://…)', latestNotes:'Notes', save:'Save', machineId:'Machine id', plugins:'plug-ins', reportsSent:'bug reports', none2:'No test machines.' },
   vi: { setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
     hosts:'Server', real:'Máy thật', test:'Máy test', setups:'Cài đặt lần đầu', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
     lastSeen:'Báo cáo gần nhất', licence:'Giấy phép', version:'Phiên bản', players:'Người chơi (cao nhất / giới hạn)', accounts:'Tài khoản / nhân vật', health:'Sập / lỗi tuần này', files:'File', features:'Tính năng',
@@ -99,7 +99,7 @@ const T = {
     open:'đang chờ', issued:'đã cấp', declined:'đã từ chối', withdrawn:'đã thu hồi', copy:'Copy file', copied:'Đã copy', pending:'báo lỗi chờ được chuyển thành issue mỗi ngày', openIssues:'Mở danh sách issue',
     makeKey:'Tạo khóa giấy phép', keyMade:'Đã có khóa giấy phép', keyHint:'Đưa public key này cho Claude để đặt vào HNMO (licence-pub.pem), một lần:', devices:'Trình duyệt tin cậy', forget:'Xóa', thisOne:'trình duyệt này', saved:'Xong.', grace:'vượt giới hạn từ', uptime:'Chạy', os:'Hệ điều hành', integrity:{ok:'nguyên vẹn', modified:'BỊ SỬA', unsigned:'bản chưa ký', unknown:'chưa rõ'},
     host:'Chủ server', system:'Hệ thống', game:'Game', place:'IP và quốc gia', autoWithdrawn:'tự thu hồi', computers:'Các máy đã thấy', manyOk:'cho phép nhiều máy', sentTimes:'lần gửi', oldId:'mã cũ',
-    noMuName:'(chưa có tên MU)', noHost:'chưa điền chủ server', markTest:'Đây là máy test', markReal:'Đây là máy thật', allTest:'Đánh dấu tất cả máy ở đây là máy test', allTestAsk:'Đánh dấu tất cả những máy này là máy test của anh?', details:'Chi tiết', firstSetup:'Cài đặt lần đầu', noReport:'chưa có báo cáo tuần', machineId:'Mã máy', plugins:'plug-in', reportsSent:'báo lỗi', none2:'Không có máy test.' },
+    noMuName:'(chưa có tên MU)', noHost:'chưa điền chủ server', markTest:'Đây là máy test', markReal:'Đây là máy thật', allTest:'Đánh dấu tất cả máy ở đây là máy test', allTestAsk:'Đánh dấu tất cả những máy này là máy test của anh?', details:'Chi tiết', firstSetup:'Cài đặt lần đầu', noReport:'chưa có báo cáo tuần', latestTitle:'Bản HNMO mới nhất', latestHint:'Server HNMO kiểm tra cập nhật ở đây và nút "Tải HNMO" trên website của họ dẫn tới link này. Để trống link: không có.', latestTag:'Phiên bản', latestUrl:'Link tải (https://…)', latestNotes:'Ghi chú', save:'Lưu', machineId:'Mã máy', plugins:'plug-in', reportsSent:'báo lỗi', none2:'Không có máy test.' },
 };
 let lang = (() => { try { return localStorage.getItem('hnmo-console-lang') || 'vi'; } catch { return 'vi'; } })();
 const t = (k) => T[lang][k] ?? T.en[k] ?? k;
@@ -167,7 +167,18 @@ const VIEWS = {
     else keyCard.append(el('button', { type:'button', class:'primary', text: t('makeKey'), on:{ click: async () => { await api('make-key', {}); await load(); } } }));
     const devices = el('div', { class:'card' }, el('h2', { text: t('devices') }));
     for (const d of state.devices) devices.append(el('div', {}, el('span', { text: when(d.added) + ' → ' + when(d.lastSeen) + (d.current ? ' (' + t('thisOne') + ')' : '') + ' · ' }), el('span', { class:'muted', text: d.name + ' ' }), el('button', { type:'button', class:'danger', text: t('forget'), on:{ click: async () => { await api('forget-device', { device: d.id }); await load(); } } })));
-    wrap.append(keyCard, devices);
+    const latest = state.latest || {};
+    const tagInput = el('input', { value: latest.tag || '' });
+    const urlInput = el('input', { value: latest.url || '', placeholder: 'https://' });
+    const notesInput = el('textarea', { rows: '3' }); notesInput.value = latest.notes || '';
+    const latestResult = el('span', { class:'muted' });
+    const latestCard = el('form', { class:'card' }, el('h2', { text: t('latestTitle') }), el('p', { class:'muted', text: t('latestHint') }),
+      el('label', {}, el('span', { class:'muted', text: t('latestTag') }), tagInput),
+      el('label', {}, el('span', { class:'muted', text: t('latestUrl') }), urlInput),
+      el('label', {}, el('span', { class:'muted', text: t('latestNotes') }), notesInput),
+      el('div', { class:'row', style:'margin-top:8px' }, el('button', { class:'primary', type:'submit', text: t('save') }), latestResult));
+    latestCard.addEventListener('submit', async (e) => { e.preventDefault(); try { await api('latest', { tag: tagInput.value, url: urlInput.value, notes: notesInput.value }); latestResult.textContent = t('saved'); await load(); } catch (err) { latestResult.textContent = String(err.message || err); } });
+    wrap.append(keyCard, latestCard, devices);
     return wrap;
   },
 };
