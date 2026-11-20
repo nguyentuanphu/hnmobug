@@ -3,7 +3,8 @@
 // with the HNMO build key (older licences, hnmo-pub.pem) or the hub's licence key (lib/keys.mts). The hub knows a
 // licensed server by it: no sign-up.
 import { createPublicKey, verify } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export type Licence =
   | { valid: true; licensee: string; maxPlayers: number; expires: string | null; machine: string | null; id: string | null }
@@ -13,8 +14,19 @@ let buildKeyPem: string | null = null;
 
 /** The HNMO build key's public half. */
 export function buildKey(): string {
-  // Netlify bundles the function with the file next to it (netlify.toml included_files); tests read it the same way.
-  buildKeyPem ??= process.env.HNMO_PUBLIC_KEY || readFileSync(new URL('./hnmo-pub.pem', import.meta.url), 'utf8');
+  // Tests read the file next to this module. On Netlify the function is bundled into netlify/functions/, while
+  // netlify.toml's included_files keeps the key at netlify/lib/hnmo-pub.pem under the function's root (the working
+  // directory), so the path next to the bundle doesn't exist there.
+  if (buildKeyPem === null) {
+    const candidates = [
+      new URL('./hnmo-pub.pem', import.meta.url),
+      new URL('../lib/hnmo-pub.pem', import.meta.url),
+      join(process.cwd(), 'netlify', 'lib', 'hnmo-pub.pem'),
+    ];
+    const found = candidates.find((path) => existsSync(path));
+    if (!process.env.HNMO_PUBLIC_KEY && !found) throw new Error('hnmo-pub.pem not found');
+    buildKeyPem = process.env.HNMO_PUBLIC_KEY || readFileSync(found!, 'utf8');
+  }
   return buildKeyPem;
 }
 
