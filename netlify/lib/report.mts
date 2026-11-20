@@ -1,5 +1,6 @@
-// What a game server may send, cleaned and cut to size. Nothing else is kept: no login, e-mail or IP (the IP only as a
-// salted hash, for the limits).
+// What a game server may send, cleaned and cut to size. Nothing else is kept: no player login, e-mail or password. The IP
+// only as a salted hash for the limits, except the first-setup report, which keeps the IP it came from and its country
+// (owner's choice, 2026-11-21; the server's setup page tells the host).
 export const CATEGORIES = ['display', 'skill', 'item', 'quest', 'connection', 'other'] as const;
 
 const cut = (value: unknown, max: number): string => (typeof value === 'string' ? value.replace(/\u0000/g, '').trim().slice(0, max) : '');
@@ -84,6 +85,41 @@ export function cleanWeekly(value: unknown): Weekly | null {
     bugs: Array.isArray(b.bugs) ? b.bugs.slice(0, 50).map(cleanBug).filter((x): x is Bug => x !== null) : [],
   };
 }
+
+export interface Setup {
+  system: { os: string; arch: string; cpu: string; cores: number; ramGb: number; freeDiskGb: number | null; dotnet: string };
+  game: { name: string; servers: number[]; seasons: string[]; publicAddress: string; language: string };
+  host: { name: string; contact: string };
+}
+
+const gb = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1e6, Math.round(value * 10) / 10)) : 0);
+
+/** The first-setup report: the host's system and game, and the host's optional name and contact. */
+export function cleanSetup(value: unknown): Setup | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const b = value as Record<string, unknown>;
+  if (typeof b.system !== 'object' || b.system === null) return null;
+  const system = b.system as Record<string, unknown>;
+  const game = (b.game ?? {}) as Record<string, unknown>;
+  const host = (b.host ?? {}) as Record<string, unknown>;
+  return {
+    system: {
+      os: cut(system.os, 120), arch: cut(system.arch, 20), cpu: cut(system.cpu, 120), cores: num(system.cores, 4096),
+      ramGb: gb(system.ramGb), freeDiskGb: system.freeDiskGb === null || system.freeDiskGb === undefined ? null : gb(system.freeDiskGb), dotnet: cut(system.dotnet, 60),
+    },
+    game: {
+      name: cut(game.name, 80),
+      servers: Array.isArray(game.servers) ? game.servers.map((s) => num(s, 255)).slice(0, 50) : [],
+      seasons: Array.isArray(game.seasons) ? game.seasons.map((s) => cut(s, 10)).filter((s) => ['s6', 's9', 'arena'].includes(s)) : [],
+      publicAddress: cut(game.publicAddress, 200),
+      language: cut(game.language, 20),
+    },
+    host: { name: cut(host.name, 80), contact: cut(host.contact, 120) },
+  };
+}
+
+/** First-setup reports a computer may send in a Sydney day. */
+export const SETUPS_PER_DAY = 3;
 
 /** A server may send its weekly report once in this many days. */
 export const WEEKLY_MIN_DAYS = 6;

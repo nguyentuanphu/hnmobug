@@ -7,7 +7,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
 import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../lib/keys.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type RequestRecord, type Store } from '../lib/hub.mts';
+import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type RequestRecord, type SeenRecord, type SetupRecord, type Store } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
 
 interface Session { exp: number; d: string }
@@ -103,11 +103,13 @@ export default async (req: Request, context: { ip?: string }) => {
 
   if (action === 'state' && req.method === 'GET') {
     const key = await licenceKey(store);
-    const [hosts, requests, licences, devices] = await Promise.all([
+    const [hosts, requests, licences, devices, setups, seen] = await Promise.all([
       listJson<HostRecord>(store, 'hosts/'),
       listJson<RequestRecord>(store, 'requests/'),
       listJson<LicenceRecord>(store, 'licences/'),
       listJson<Device>(store, 'devices/'),
+      listJson<SetupRecord>(store, 'setups/'),
+      listJson<SeenRecord>(store, 'seen/'),
     ]);
     const { blobs } = await store.list({ prefix: 'pending/' });
     return json({
@@ -115,7 +117,8 @@ export default async (req: Request, context: { ip?: string }) => {
       licenceKey: key ? { publicPem: key.publicPem, made: key.made } : null,
       hosts: hosts.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen)),
       requests: requests.map(({ tokenHash: _hidden, ...r }) => r).sort((a, b) => b.at.localeCompare(a.at)),
-      licences: licences.sort((a, b) => b.issued.localeCompare(a.issued)),
+      licences: licences.sort((a, b) => b.issued.localeCompare(a.issued)).map(({ file, ...l }) => ({ ...l, file, computers: seen.find((s) => s.licenceId === l.id)?.computers ?? [] })),
+      setups: setups.sort((a, b) => b.at.localeCompare(a.at)),
       devices: devices.map((d) => ({ ...d, current: d.id === session.d })),
       pendingBugs: blobs.length,
       issuesUrl: process.env.ISSUES_URL || '',
@@ -166,7 +169,11 @@ export default async (req: Request, context: { ip?: string }) => {
     const id = cleanText(body.licence, 60);
     const record = (await store.get(`licences/${id}`, { type: 'json' })) as LicenceRecord | null;
     if (!record) return json({ error: 'unknown licence' }, 404);
-    await store.setJSON(`licences/${id}`, { ...record, revoked: body.undo === true ? null : new Date().toISOString() });
+    // Giving back a licence withdrawn by itself (seen on 2 or more computers) lets it be used on more computers.
+    const undo = body.undo === true;
+    await store.setJSON(`licences/${id}`, undo
+      ? { ...record, revoked: null, revokedReason: null, manyComputers: record.manyComputers === true || !!record.revokedReason }
+      : { ...record, revoked: new Date().toISOString(), revokedReason: null });
     return json({ ok: true });
   }
 

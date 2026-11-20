@@ -1,11 +1,13 @@
 // POST /api/weekly: an HNMO server's weekly report (once in 6 days per computer): its licence, version, players, health,
 // features and up to 50 bug reports its owner forwarded. The answer tells the server whether its licence was withdrawn.
-// The bug reports wait for the daily GitHub Action (tools/reports-to-issues.mts).
+// The bug reports wait for the daily GitHub Action (tools/reports-to-issues.mts). A licence seen on 2 or more computers
+// lately is withdrawn by itself (owner, 2026-11-21); a server that moved to the real machine id sends its old id too
+// (legacyMachine), and its record moves to the new id.
 import { randomUUID } from 'node:crypto';
 import { checkLicence } from '../lib/license.mts';
 import { cleanMachine, cleanWeekly, WEEKLY_MIN_DAYS, type Stored } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { clientIp, countOnce, hub, ipHash, json, licenceKeys, type HostRecord, type LicenceRecord } from '../lib/hub.mts';
+import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteLicenceUse, withdrawIfShared, type HostRecord, type LicenceRecord } from '../lib/hub.mts';
 
 const DAY = 24 * 3600 * 1000;
 
@@ -20,6 +22,7 @@ export default async (req: Request, context: { ip?: string }) => {
     return json({ error: 'not JSON' }, 400);
   }
   const machine = cleanMachine(body.machine);
+  const legacy = cleanMachine(body.legacyMachine);
   const weekly = cleanWeekly(body);
   if (!machine || !weekly) return json({ error: 'not a weekly report' }, 400);
 
@@ -27,7 +30,11 @@ export default async (req: Request, context: { ip?: string }) => {
   const now = new Date();
   const today = sydneyDay(now);
   const key = `hosts/${machine}`;
-  const previous = (await store.get(key, { type: 'json' })) as HostRecord | null;
+  let previous = (await store.get(key, { type: 'json' })) as HostRecord | null;
+  if (!previous && legacy && legacy !== machine) {
+    // The same server under its old id: its record moves to the new one.
+    previous = (await store.get(`hosts/${legacy}`, { type: 'json' })) as HostRecord | null;
+  }
   if (previous && now.getTime() - Date.parse(previous.lastSeen) < WEEKLY_MIN_DAYS * DAY) {
     const next = new Date(Date.parse(previous.lastSeen) + WEEKLY_MIN_DAYS * DAY).toISOString();
     return json({ error: 'too soon', next }, 429);
@@ -37,7 +44,8 @@ export default async (req: Request, context: { ip?: string }) => {
 
   const licence = checkLicence(body.licence ?? null, today, await licenceKeys(store));
   const issued = licence.valid && licence.id ? (await store.get(`licences/${licence.id}`, { type: 'json' })) as LicenceRecord | null : null;
-  const revoked = issued?.revoked ? true : false;
+  const computers = issued ? await noteLicenceUse(store, issued.id, machine, legacy && legacy !== machine ? legacy : null, now) : [];
+  const revoked = issued ? await withdrawIfShared(store, issued, computers, now) : false;
   const { bugs, ...latest } = weekly;
   const record: HostRecord = {
     machine,
@@ -52,6 +60,7 @@ export default async (req: Request, context: { ip?: string }) => {
     weeks: [...(previous?.weeks ?? []), { at: now.toISOString(), peak: latest.players.peak, crashes: latest.health.crashes, errors: latest.health.errors, online: latest.players.online }].slice(-12),
   };
   await store.setJSON(key, record);
+  if (legacy && legacy !== machine && previous?.machine === legacy) await store.delete(`hosts/${legacy}`);
 
   for (const bug of bugs) {
     const stored: Stored = { kind: 'bug', receivedAt: now.toISOString(), machine, version: latest.version, licensee: record.licensee, licenceProblem: record.licenceProblem, bug };

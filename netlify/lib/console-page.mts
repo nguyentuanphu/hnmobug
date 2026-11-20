@@ -73,17 +73,19 @@ pre { white-space:pre-wrap; word-break:break-all; font-size:12px; background:var
 const BASE = ${JSON.stringify(base)};
 const T = {
   en: { setupTitle:'First use: set your sign-in', setupHint:'Paste the hub key (HUB_KEY from the site settings) to prove it is you, and choose the console password. This is asked only once.', hubKey:'Hub key (HUB_KEY)', newPassword:'New password (12 characters or more)', again:'The password again', setupSave:'Save', differ:'The two passwords differ or are shorter than 12 characters.', appTitle:'Add the console to your authenticator app', appHint:'In Google Authenticator or Microsoft Authenticator: add an account, choose "Enter a setup key", name it HNMO console, and type the key below (time based). Then type the 6-digit code it shows.', appKey:'Key:', appLink:'or open this link on the phone', password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
-    hosts:'Servers', requests:'Licence requests', licences:'Licences', bugs:'Bug reports', security:'Security',
+    hosts:'Servers', setups:'First setups', requests:'Licence requests', licences:'Licences', bugs:'Bug reports', security:'Security',
     lastSeen:'Last report', licence:'Licence', version:'Version', players:'Players (most at once / limit)', accounts:'Accounts / characters', health:'Crashes / errors this week', files:'Files', features:'Features',
     none:'None yet.', free:'free (10 players)', issue:'Issue a licence', decline:'Decline', revoke:'Withdraw', undo:'Give back', name:'Name', contact:'Contact', asked:'Players asked', note:'Note', machine:'Computer id', expires:'Last day (empty: none)', maxPlayers:'Players at once', bind:'Only this computer',
     open:'waiting', issued:'issued', declined:'declined', withdrawn:'withdrawn', copy:'Copy file', copied:'Copied', pending:'reports wait for the daily filing as issues', openIssues:'Open the issues',
-    makeKey:'Make the licence key', keyMade:'Licence key made', keyHint:'Give this public key to Claude to put into HNMO (licence-pub.pem), once:', devices:'Trusted browsers', forget:'Remove', thisOne:'this browser', saved:'Done.', grace:'over the limit since', uptime:'Up', os:'System', integrity:{ok:'unchanged', modified:'MODIFIED', unsigned:'unsigned build', unknown:'unknown'} },
+    makeKey:'Make the licence key', keyMade:'Licence key made', keyHint:'Give this public key to Claude to put into HNMO (licence-pub.pem), once:', devices:'Trusted browsers', forget:'Remove', thisOne:'this browser', saved:'Done.', grace:'over the limit since', uptime:'Up', os:'System', integrity:{ok:'unchanged', modified:'MODIFIED', unsigned:'unsigned build', unknown:'unknown'},
+    host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id' },
   vi: { setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
-    hosts:'Server', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
+    hosts:'Server', setups:'Cài đặt lần đầu', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
     lastSeen:'Báo cáo gần nhất', licence:'Giấy phép', version:'Phiên bản', players:'Người chơi (cao nhất / giới hạn)', accounts:'Tài khoản / nhân vật', health:'Sập / lỗi tuần này', files:'File', features:'Tính năng',
     none:'Chưa có.', free:'miễn phí (10 người)', issue:'Cấp giấy phép', decline:'Từ chối', revoke:'Thu hồi', undo:'Trả lại', name:'Tên', contact:'Liên lạc', asked:'Số người xin', note:'Ghi chú', machine:'Mã máy', expires:'Ngày cuối (trống: không hạn)', maxPlayers:'Số người cùng lúc', bind:'Chỉ máy này',
     open:'đang chờ', issued:'đã cấp', declined:'đã từ chối', withdrawn:'đã thu hồi', copy:'Copy file', copied:'Đã copy', pending:'báo lỗi chờ được chuyển thành issue mỗi ngày', openIssues:'Mở danh sách issue',
-    makeKey:'Tạo khóa giấy phép', keyMade:'Đã có khóa giấy phép', keyHint:'Đưa public key này cho Claude để đặt vào HNMO (licence-pub.pem), một lần:', devices:'Trình duyệt tin cậy', forget:'Xóa', thisOne:'trình duyệt này', saved:'Xong.', grace:'vượt giới hạn từ', uptime:'Chạy', os:'Hệ điều hành', integrity:{ok:'nguyên vẹn', modified:'BỊ SỬA', unsigned:'bản chưa ký', unknown:'chưa rõ'} },
+    makeKey:'Tạo khóa giấy phép', keyMade:'Đã có khóa giấy phép', keyHint:'Đưa public key này cho Claude để đặt vào HNMO (licence-pub.pem), một lần:', devices:'Trình duyệt tin cậy', forget:'Xóa', thisOne:'trình duyệt này', saved:'Xong.', grace:'vượt giới hạn từ', uptime:'Chạy', os:'Hệ điều hành', integrity:{ok:'nguyên vẹn', modified:'BỊ SỬA', unsigned:'bản chưa ký', unknown:'chưa rõ'},
+    host:'Chủ server', system:'Hệ thống', game:'Game', place:'IP và quốc gia', autoWithdrawn:'tự thu hồi', computers:'Các máy đã thấy', manyOk:'cho phép nhiều máy', sentTimes:'lần gửi', oldId:'mã cũ' },
 };
 let lang = (() => { try { return localStorage.getItem('hnmo-console-lang') || 'vi'; } catch { return 'vi'; } })();
 const t = (k) => T[lang][k] ?? T.en[k] ?? k;
@@ -106,8 +108,8 @@ function render() {
   labels();
   const tabs = document.getElementById('tabs'); tabs.replaceChildren();
   const openRequests = state.requests.filter((r) => r.status === 'open').length;
-  for (const id of ['hosts', 'requests', 'licences', 'bugs', 'security']) {
-    const label = t(id) + (id === 'requests' && openRequests ? ' (' + openRequests + ')' : id === 'hosts' ? ' (' + state.hosts.length + ')' : '');
+  for (const id of ['hosts', 'setups', 'requests', 'licences', 'bugs', 'security']) {
+    const label = t(id) + (id === 'requests' && openRequests ? ' (' + openRequests + ')' : id === 'hosts' ? ' (' + state.hosts.length + ')' : id === 'setups' ? ' (' + state.setups.length + ')' : '');
     tabs.append(el('button', { type:'button', 'aria-pressed': String(tab === id), text: label, on:{ click:() => { tab = id; render(); } } }));
   }
   const view = document.getElementById('view'); view.replaceChildren(VIEWS[tab]());
@@ -133,6 +135,22 @@ const VIEWS = {
     table.append(body);
     return el('div', { class:'card table' }, table);
   },
+  setups() {
+    if (!state.setups.length) return el('p', { class:'muted', text:t('none') });
+    const table = el('table', {}, el('thead', {}, el('tr', {}, ...['host', 'place', 'system', 'game', 'lastSeen'].map((k) => el('th', { text:t(k) })))));
+    const body = el('tbody');
+    for (const s of state.setups) {
+      const sy = s.system, g = s.game;
+      body.append(el('tr', {},
+        el('td', {}, el('div', { text: s.host.name || '-' }), el('div', { class:'muted', text: (s.host.contact || '-') }), el('div', { class:'muted', text: s.machine + (s.legacyMachine ? ' · ' + t('oldId') + ' ' + s.legacyMachine : '') + (s.licensee ? ' · ' + s.licensee : '') })),
+        el('td', {}, el('div', { text: s.ip || '-' }), el('div', { class:'muted', text: s.country || '-' })),
+        el('td', {}, el('div', { text: sy.os + ' · ' + sy.arch }), el('div', { class:'muted', text: sy.cpu + ' · ' + sy.cores + ' cores · ' + sy.ramGb + ' GB RAM · ' + (sy.freeDiskGb ?? '?') + ' GB free · ' + sy.dotnet + ' · HNMO ' + s.version })),
+        el('td', {}, el('div', { text: g.name }), el('div', { class:'muted', text: [g.seasons.join(', '), g.servers.length + ' servers', g.publicAddress, g.language].filter(Boolean).join(' · ') })),
+        el('td', {}, el('div', { text: when(s.at) }), el('div', { class:'muted', text: s.times + ' ' + t('sentTimes') + ' · ' + when(s.firstAt) }))));
+    }
+    table.append(body);
+    return el('div', { class:'card table' }, table);
+  },
   requests() {
     const wrap = el('div');
     if (!state.requests.length) wrap.append(el('p', { class:'muted', text:t('none') }));
@@ -151,7 +169,9 @@ const VIEWS = {
     for (const l of state.licences) {
       const copy = el('button', { type:'button', text: t('copy'), on:{ click: async () => { await navigator.clipboard.writeText(l.file); copy.textContent = t('copied'); } } });
       wrap.append(el('div', { class:'card' },
-        el('div', {}, el('strong', { text: l.licensee }), document.createTextNode(' · ' + l.maxPlayers + ' · ' + (l.expires || '∞') + ' · ' + (l.machine || '*') + ' · '), el('span', { class: l.revoked ? 'bad' : 'ok', text: l.revoked ? t('withdrawn') + ' ' + when(l.revoked) : l.id })),
+        el('div', {}, el('strong', { text: l.licensee }), document.createTextNode(' · ' + l.maxPlayers + ' · ' + (l.expires || '∞') + ' · ' + (l.machine || '*') + ' · '), el('span', { class: l.revoked ? 'bad' : 'ok', text: l.revoked ? (l.revokedReason ? t('autoWithdrawn') : t('withdrawn')) + ' ' + when(l.revoked) : l.id }), l.manyComputers ? el('span', { class:'muted', text: ' · ' + t('manyOk') }) : null),
+        l.revokedReason ? el('div', { class:'bad', text: l.revokedReason }) : null,
+        l.computers.length ? el('div', { class:'muted', text: t('computers') + ': ' + l.computers.map((c) => c.machine + (c.legacy ? ' (' + t('oldId') + ' ' + c.legacy + ')' : '') + ' ' + when(c.last)).join(' · ') }) : null,
         el('div', {}, copy, document.createTextNode(' '), el('button', { type:'button', class: l.revoked ? '' : 'danger', text: l.revoked ? t('undo') : t('revoke'), on:{ click: async () => { await api('revoke', { licence: l.id, undo: !!l.revoked }); await load(); } } }))));
     }
     return wrap;

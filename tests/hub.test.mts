@@ -13,6 +13,7 @@ import { memoryStore } from './memory-store.mts';
 import consoleFn from '../netlify/functions/console.mts';
 import requestFn from '../netlify/functions/report.mts';
 import weeklyFn from '../netlify/functions/weekly.mts';
+import setupFn from '../netlify/functions/setup.mts';
 
 process.env.SESSION_SECRET = 's'.repeat(40);
 process.env.LICENCE_KEY_SECRET = 'k'.repeat(40);
@@ -175,4 +176,86 @@ test('the same bug from two servers is one issue that counts both', () => {
   assert.equal(noMention('ask @admin'), 'ask @​admin');
   const summary = summaryBody([{ number: 1, title: '[skill] a', body: '', state: 'open', labels: [{ name: 'bug' }, { name: 'area:skill' }], updated_at: new Date().toISOString() }], '2026-11-21', new Date());
   assert.match(summary, /Open bugs: 1 \(skill 1\)/);
+});
+
+test('a licence seen on two computers is withdrawn by itself; the old and new id of one computer count once; giving it back allows more', async () => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  const base = `/c/${process.env.CONSOLE_SLUG}`;
+  const h = { 'X-Console': '1' };
+  const code = totpCode(process.env.CONSOLE_TOTP_SECRET!, Math.floor(Date.now() / 30_000));
+  const signedIn = await consoleFn(post(`${base}/api/login`, { password: 'correct horse battery', code }, h), ctx);
+  const jar = signedIn.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ');
+  const as = { ...h, cookie: jar };
+  await consoleFn(post(`${base}/api/make-key`, {}, as), ctx);
+  const issued = await (await consoleFn(post(`${base}/api/issue`, { licensee: 'Shared', maxPlayers: 30 }, as), ctx)).json() as { licence: { id: string; file: string } };
+  const weekly = (machine: string, legacyMachine?: string) => ({ machine, legacyMachine, version: '1.1', licence: issued.licence.file, players: { peak: 3, limit: 30 } });
+  const OLD = 'aaaaaaaaaaaaaaaa', NEW = 'bbbbbbbbbbbbbbbb', OTHER = 'cccccccccccccccc';
+
+  // One computer: first under its old id, then (after the update) its real id with the old one beside it.
+  assert.equal((await (await weeklyFn(post('/api/weekly', weekly(OLD)), ctx)).json() as { revoked: boolean }).revoked, false);
+  const moved = await (await weeklyFn(post('/api/weekly', weekly(NEW, OLD)), ctx)).json() as { revoked: boolean; error?: string };
+  assert.equal(moved.error, 'too soon', 'the same server under its new id: still once in six days');
+  const host = JSON.parse(store.data.get(`hosts/${OLD}`)!);
+  host.lastSeen = new Date(Date.now() - 7 * 86400_000).toISOString();
+  store.data.set(`hosts/${OLD}`, JSON.stringify(host));
+  assert.equal((await (await weeklyFn(post('/api/weekly', weekly(NEW, OLD)), ctx)).json() as { revoked: boolean }).revoked, false, 'old and new id: one computer');
+  assert.equal(store.data.has(`hosts/${OLD}`), false, 'its record moved to the new id');
+  assert.equal(JSON.parse(store.data.get(`hosts/${NEW}`)!).weeks.length, 2);
+
+  // Another computer with the same licence: withdrawn, with the reason the console shows.
+  const shared = await (await weeklyFn(post('/api/weekly', weekly(OTHER)), ctx)).json() as { revoked: boolean };
+  assert.equal(shared.revoked, true);
+  type Lic = { id: string; revoked: string | null; revokedReason?: string; manyComputers?: boolean; computers: { machine: string }[] };
+  const state = async () => (await (await consoleFn(new Request(`https://hub.example${base}/api/state`, { headers: { cookie: jar } }), ctx)).json() as { licences: Lic[] }).licences[0];
+  const withdrawn = await state();
+  assert.ok(withdrawn.revoked);
+  assert.match(withdrawn.revokedReason!, /seen on 2 computers: bbbbbbbbbbbbbbbb, cccccccccccccccc/);
+  assert.deepEqual(withdrawn.computers.map((c) => c.machine), [NEW, OTHER]);
+
+  // The developer gives it back: more computers are fine for it from then on.
+  await consoleFn(post(`${base}/api/revoke`, { licence: issued.licence.id, undo: true }, as), ctx);
+  const back = await state();
+  assert.equal(back.revoked, null);
+  assert.equal(back.manyComputers, true);
+  const otherHost = JSON.parse(store.data.get(`hosts/${OTHER}`)!);
+  otherHost.lastSeen = new Date(Date.now() - 7 * 86400_000).toISOString();
+  store.data.set(`hosts/${OTHER}`, JSON.stringify(otherHost));
+  assert.equal((await (await weeklyFn(post('/api/weekly', weekly(OTHER)), ctx)).json() as { revoked: boolean }).revoked, false);
+  useStoreForTests(null);
+});
+
+test('the first-setup report keeps the system, the game, the host and the IP with its country; a licence fetch takes the old id', async () => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  const report = {
+    machine: 'dddddddddddddddd', legacyMachine: 'eeeeeeeeeeeeeeee', version: '1.2',
+    system: { os: 'Microsoft Windows 10.0.22631', arch: 'X64', cpu: 'Intel(R) Core(TM) i7-9700', cores: 8, ramGb: 15.94, freeDiskGb: 120.4, dotnet: '.NET 10.0.0' },
+    game: { name: 'HenryN Mu Online', servers: [0, 1], seasons: ['s6', 'arena', 'evil'], publicAddress: 'mu.example.net', language: 'vi-VN' },
+    host: { name: 'Minh', contact: 'zalo 0900' },
+    password: 'never kept',
+  };
+  const geo = { ...ctx, geo: { country: { code: 'VN', name: 'Vietnam' } } };
+  assert.equal((await setupFn(post('/api/setup', { machine: 'x' }), geo)).status, 400);
+  assert.equal((await setupFn(post('/api/setup', report), geo)).status, 200);
+  const kept = JSON.parse(store.data.get('setups/dddddddddddddddd')!);
+  assert.equal(kept.ip, '203.0.113.9');
+  assert.equal(kept.country, 'VN · Vietnam');
+  assert.equal(kept.legacyMachine, 'eeeeeeeeeeeeeeee');
+  assert.equal(kept.system.ramGb, 15.9);
+  assert.deepEqual(kept.game.seasons, ['s6', 'arena']);
+  assert.deepEqual(kept.host, { name: 'Minh', contact: 'zalo 0900' });
+  assert.equal(JSON.stringify(kept).includes('never kept'), false);
+  assert.equal((await setupFn(post('/api/setup', report), geo)).status, 200);
+  assert.equal(JSON.parse(store.data.get('setups/dddddddddddddddd')!).times, 2);
+  await setupFn(post('/api/setup', report), geo);
+  assert.equal((await setupFn(post('/api/setup', report), geo)).status, 429, 'three a day per computer');
+
+  // A request made under the old id: its answer is fetched after the update with the new id and the old one beside it.
+  const token = 'tok_' + 'y'.repeat(30);
+  const asked = await (await requestFn(post('/api/request', { machine: 'eeeeeeeeeeeeeeee', name: 'Minh', players: 20, token }), ctx)).json() as { request: string };
+  assert.equal((await requestFn(post('/api/licence', { machine: 'dddddddddddddddd', request: asked.request, token }), ctx)).status, 404, 'without the old id: another computer');
+  const answer = await (await requestFn(post('/api/licence', { machine: 'dddddddddddddddd', legacyMachine: 'eeeeeeeeeeeeeeee', request: asked.request, token }), ctx)).json() as { status: string };
+  assert.equal(answer.status, 'open');
+  useStoreForTests(null);
 });

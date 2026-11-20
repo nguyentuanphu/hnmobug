@@ -4,14 +4,20 @@ The HNMO developer's console and the address HNMO servers send to. The site's fr
 console is on a hidden path (`/c/<CONSOLE_SLUG>/`) behind a password and, on a new browser, a 6-digit code from an
 authenticator app (the browser is then trusted for 30 days).
 
-What HNMO servers send (never player accounts, e-mails or IPs):
+What HNMO servers send (never player accounts, e-mails or passwords; an IP only in the first-setup report):
 - `POST /api/request`: a licence request (name, contact, players, note; a one-time secret only that server knows).
   `POST /api/licence`: the server asks for the answer with its secret and gets the licence the developer issued.
 - `POST /api/weekly`: once in 6 days per server: licence, version, system, uptime, the most players at once against the
   limit, accounts and characters, crashes and errors, the file check, Season 9 / Arena, plug-ins, rates, and up to 50
-  bug reports its owner forwarded. The answer says whether the licence was withdrawn.
+  bug reports its owner forwarded. The answer says whether the licence was withdrawn. A licence seen on 2 or more
+  computers in 30 days is withdrawn by itself (the console says why; "Give back" allows more computers for it).
+- `POST /api/setup`: once, at a server's first setup: its system (OS, CPU and cores, RAM, free disk, HNMO and .NET
+  versions, machine id), its game (name, servers and seasons, public address, language), the host's optional name and
+  contact. The hub keeps it with the IP it came from and that IP's country (owner's choice, 2026-11-21).
+- Machine ids come from the system's own id; a server updated from the computer-name id sends its old id too
+  (`legacyMachine`), so its record, its licence requests and its licence count as the same computer.
 
-In the console: the servers and their weekly numbers, licence requests (issue or decline), licences (copy, withdraw),
+In the console: the servers and their weekly numbers, the first setups (host, IP and country, system, game), licence requests (issue or decline), licences (copy, withdraw),
 the bug reports waiting, the licence key, trusted browsers. Licences are signed with a key of their own made by the hub
 (kept encrypted); HNMO's build key stays on the developer's computer.
 

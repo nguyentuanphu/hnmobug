@@ -29,7 +29,9 @@ export default async (req: Request, context: { ip?: string }) => {
     const token = typeof body.token === 'string' ? body.token : '';
     const record = id ? (await store.get(`requests/${id}`, { type: 'json' })) as RequestRecord | null : null;
     const given = Buffer.from(tokenHash(token));
-    if (!record || record.machine !== machine || given.length !== record.tokenHash.length || !timingSafeEqual(given, Buffer.from(record.tokenHash))) {
+    const legacy = cleanMachine(body.legacyMachine);
+    const sameComputer = record !== null && (record.machine === machine || (legacy !== null && record.machine === legacy));
+    if (!record || !sameComputer || given.length !== record.tokenHash.length || !timingSafeEqual(given, Buffer.from(record.tokenHash))) {
       return json({ error: 'unknown request' }, 404);
     }
     return json({ status: record.status, licence: record.status === 'issued' ? record.licence : null });
