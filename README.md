@@ -15,8 +15,10 @@ What HNMO servers send (never player accounts, e-mails or passwords; an IP only 
   versions, machine id), its game (name, servers and seasons, public address, language), the host's optional name and
   contact (from its licence request). The hub keeps it with the IP it came from and that IP's country (owner's choice,
   2026-11-21). The servers send all of this silently.
-- `GET /api/latest`: the newest HNMO release the developer set in the console (Security): HNMO servers' update check
-  and their website's "Download HNMO" link read it, so no HNMO folder points at where HNMO is built.
+- `GET /api/latest`: the newest HNMO release the developer publishes in the console (Security, a version like 1.0.0):
+  its notes, the whole folder's link, and where the updater finds the files (`UPDATES_URL`, the public address of the
+  Cloudflare R2 bucket the package workflow uploads to: `releases/<version>/manifest.json`, `files/<sha256>`). HNMO
+  servers' "Update" and their website's "Download HNMO" read it, so no HNMO folder points at where HNMO is built.
 - Machine ids come from the system's own id; a server updated from the computer-name id sends its old id too
   (`legacyMachine`), so its record, its licence requests and its licence count as the same computer.
 

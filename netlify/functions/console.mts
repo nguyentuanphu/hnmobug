@@ -195,11 +195,13 @@ export default async (req: Request, context: { ip?: string }) => {
     const tag = cleanText(body.tag, 40);
     const url = cleanText(body.url, 500);
     if (url && !/^https:\/\/[^\s]+$/.test(url)) return json({ error: 'The link starts with https://.' }, 400);
-    if (!url) {
+    if (tag && !/^\d+\.\d+\.\d+$/.test(tag)) return json({ error: 'The version is like 1.0.0.' }, 400);
+    if (!tag) {
       await store.delete('config/latest');
       return json({ ok: true, latest: null });
     }
-    const latest = { tag: tag || 'latest', url, notes: cleanText(body.notes, 4000), published: new Date().toISOString() };
+    // The download link may stay empty: the release's own HNMO.zip on the update storage is used then.
+    const latest = { tag, url, notes: cleanText(body.notes, 4000), published: new Date().toISOString() };
     await store.setJSON('config/latest', latest);
     return json({ ok: true, latest });
   }
