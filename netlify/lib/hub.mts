@@ -167,14 +167,22 @@ export async function countOnce(store: Store, key: string, limit: number): Promi
   return true;
 }
 
+/** How many records are read at once: one at a time made the console slow as hosts and requests grew (owner, 21 Nov). */
+export const READ_AT_ONCE = 16;
+
 export async function listJson<T>(store: Store, prefix: string, max = 1000): Promise<T[]> {
   const { blobs } = await store.list({ prefix });
-  const out: T[] = [];
-  for (const blob of blobs.slice(0, max)) {
-    const value = await store.get(blob.key, { type: 'json' });
-    if (value) out.push(value as T);
-  }
-  return out;
+  const keys = blobs.slice(0, max).map((blob) => blob.key);
+  const values: (T | null)[] = new Array(keys.length).fill(null);
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < keys.length) {
+      const index = next++;
+      values[index] = (await store.get(keys[index], { type: 'json' })) as T | null;
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(READ_AT_ONCE, keys.length) }, worker));
+  return values.filter((value): value is T => value !== null && value !== undefined);
 }
 
 export const json = (body: unknown, status = 200, headers: Record<string, string> = {}): Response =>

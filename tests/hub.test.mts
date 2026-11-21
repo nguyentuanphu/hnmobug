@@ -7,7 +7,7 @@ import { checkLicence } from '../netlify/lib/license.mts';
 import { checkPassword, checkTotp, hashPassword, sign, totpCode, unsign } from '../netlify/lib/auth.mts';
 import { makeLicenceKey, privatePem, signLicence } from '../netlify/lib/keys.mts';
 import { cleanRequest, cleanWeekly } from '../netlify/lib/report.mts';
-import { useStoreForTests } from '../netlify/lib/hub.mts';
+import { listJson, READ_AT_ONCE, useStoreForTests } from '../netlify/lib/hub.mts';
 import { addSeen, bugIssue, bugKey, noMention, readSeen, summaryBody, withSeen } from '../tools/reports-to-issues.mts';
 import { memoryStore } from './memory-store.mts';
 import consoleFn from '../netlify/functions/console.mts';
@@ -315,4 +315,24 @@ test('the newest release: set in the console, read by HNMO servers at /api/lates
   delete process.env.UPDATES_URL;
   assert.equal((await latestFn(new Request('https://hub.example/api/latest'))).status, 404, 'cleared');
   useStoreForTests(null);
+});
+
+test('the console reads its records in parallel, all of them, in order', async () => {
+  const store = memoryStore();
+  for (let i = 0; i < 40; i++) await store.setJSON(`hosts/${String(i).padStart(2, '0')}`, { n: i });
+  await store.setJSON('requests/x', { n: -1 });
+  const data = store.data;
+  let inFlight = 0;
+  let most = 0;
+  store.get = (async (key: string) => {
+    inFlight++;
+    most = Math.max(most, inFlight);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    inFlight--;
+    const value = data.get(key);
+    return value === undefined ? null : JSON.parse(value);
+  }) as typeof store.get;
+  const values = await listJson<{ n: number }>(store, 'hosts/');
+  assert.deepEqual(values.map((v) => v.n), Array.from({ length: 40 }, (_, i) => i));
+  assert.equal(most, READ_AT_ONCE, 'one at a time made the console slow');
 });
