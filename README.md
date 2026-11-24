@@ -42,3 +42,14 @@ developer), and the authenticator key is shown there. `tools/make-secrets.mts` i
 3. GitHub Actions secrets: `HUB_KEY` (same value) and `HUB_URL` (the site's address).
 4. Open `https://<site>/c/<CONSOLE_SLUG>/`: paste the hub key, choose the password, add the shown key to an
    authenticator app, type its 6-digit code. Then Security → make the licence key and give its public key to Claude.
+
+## Licence package checkout (test only)
+
+Edit the public catalogue from **Licence packages** in the signed-in console. Prices are integers in cents for AUD and USD,
+and in whole đồng for VND. An empty array clears the catalogue. The public page is `/packages.html`.
+
+To enable checkout, set `LICENCE_CHECKOUT_ORIGIN` to the site's exact HTTPS origin, `LICENCE_STRIPE_TEST_KEY` to a test secret
+or restricted key, and `LICENCE_STRIPE_WEBHOOK_SECRET` to the test endpoint's signing secret in the hosting environment.
+Use the test webhook at `/api/licence-stripe` with Checkout completion, async payment success, charge refund and charge
+dispute creation events. The console shows recent test orders and flags refunds and disputes for review. The owner
+continues to issue licences separately. Checkout accepts only test sessions.

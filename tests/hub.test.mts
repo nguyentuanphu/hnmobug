@@ -336,3 +336,24 @@ test('the console reads its records in parallel, all of them, in order', async (
   assert.deepEqual(values.map((v) => v.n), Array.from({ length: 40 }, (_, i) => i));
   assert.equal(most, READ_AT_ONCE, 'one at a time made the console slow');
 });
+
+test('licence packages can be changed and orders reviewed only through the authenticated console', async () => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  try {
+    const path = '/c/' + process.env.CONSOLE_SLUG + '/api/licence-commerce';
+    const headers = { 'X-Console': '1' };
+    const body = { packages: [{ id: 'test', name: 'Fictional', description: 'Fictional', currency: 'vnd', unitAmount: 150000 }] };
+    assert.equal((await consoleFn(post(path, body, headers), ctx)).status, 401);
+    assert.equal((await consoleFn(new Request('https://hub.example' + path), ctx)).status, 401);
+    await store.setJSON('devices/fictional', { id: 'fictional' });
+    const token = sign({ d: 'fictional', exp: Date.now() + 60_000 });
+    const Cookie = 'hnmo_session=' + token;
+    assert.equal((await consoleFn(post(path, body, { Cookie }), ctx)).status, 403);
+    assert.equal((await consoleFn(post(path, body, { ...headers, Cookie }), ctx)).status, 200);
+    const response = await consoleFn(new Request('https://hub.example' + path, { headers: { Cookie } }), ctx);
+    assert.deepEqual(await response.json(), { packages: body.packages, orders: [] });
+  } finally {
+    useStoreForTests(null);
+  }
+});
