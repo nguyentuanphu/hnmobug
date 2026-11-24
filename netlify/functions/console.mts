@@ -9,7 +9,8 @@ import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../li
 import { sydneyDay } from '../lib/day.mts';
 import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
-import { readPackages, recentLicenceOrders, savePackages } from '../lib/licence-purchase.mts';
+import { readPackages, savePackages } from '../lib/licence-purchase.mts';
+import { licenceOrdersCsv, listLicenceOrders, parseLicenceOrderFilters } from '../lib/licence-orders.mts';
 
 interface Session { exp: number; d: string }
 interface Trust { exp: number; d: string }
@@ -102,9 +103,26 @@ export default async (req: Request, context: { ip?: string }) => {
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie('hnmo_session', '', base, 0) } });
   }
 
-  if (action === 'licence-commerce' && req.method === 'GET') {
-    const [packages, orders] = await Promise.all([readPackages(store), recentLicenceOrders(store)]);
-    return json({ packages, orders });
+  if (req.method === 'GET' && (action === 'licence-commerce' || action === 'licence-orders' || action === 'licence-orders.csv')) {
+    const filters = parseLicenceOrderFilters(url.searchParams);
+    const pageText = url.searchParams.get('page') ?? '1';
+    if (!filters || !/^[1-9]\d{0,5}$/.test(pageText)) return json({ error: 'filters' }, 400);
+    if (action === 'licence-orders.csv') {
+      const { orders } = await listLicenceOrders(store, filters);
+      return new Response(licenceOrdersCsv(orders), {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="hnmo-test-licence-orders-${sydneyDay()}.csv"`,
+          'Cache-Control': 'no-store',
+          'X-Content-Type-Options': 'nosniff',
+          'Referrer-Policy': 'no-referrer',
+        },
+      });
+    }
+    const results = listLicenceOrders(store, filters, Number(pageText));
+    if (action === 'licence-orders') return json(await results);
+    const [packages, orderPage] = await Promise.all([readPackages(store), results]);
+    return url.searchParams.has('page') ? json({ packages, ...orderPage }) : json({ packages, orders: orderPage.orders });
   }
 
   if (action === 'state' && req.method === 'GET') {

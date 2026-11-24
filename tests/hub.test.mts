@@ -357,3 +357,41 @@ test('licence packages can be changed and orders reviewed only through the authe
     useStoreForTests(null);
   }
 });
+
+test('the owner alone can download the filtered order CSV without buyer details', async () => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  const base = '/c/' + process.env.CONSOLE_SLUG + '/api/';
+  await store.setJSON('devices/order-review-device', {});
+  const cookie = 'hnmo_session=' + sign({ exp: Date.now() + 60_000, d: 'order-review-device' });
+  const rejected = await consoleFn(new Request(`https://hub.example${base}licence-orders.csv`), ctx);
+  assert.equal(rejected.status, 401);
+
+  const order = {
+    id: 'fictional-order', at: '2026-11-23T13:30:28Z', sessionId: 'cs_test_fictional',
+    package: { id: 'test', name: '=Fictional, "package"', currency: 'aud', unitAmount: 1495, description: 'Internal catalogue metadata' },
+    email: 'fictional-buyer@example.test', ip: '192.0.2.9',
+  };
+  await store.setJSON('licence-orders/fictional-order', order);
+  await store.setJSON('licence-payments/fictional-order/event', { intent: 'pi_fictional' });
+  const get = (action: string) => consoleFn(new Request(`https://hub.example${base}${action}`, { headers: { cookie } }), ctx);
+  assert.equal((await get('licence-orders.csv?from=2026-02-30')).status, 400);
+  assert.equal((await get('licence-orders?from=2026-11-24&to=2026-11-23')).status, 400);
+  assert.equal((await get('licence-orders?status=other')).status, 400);
+  assert.equal((await get('licence-orders?page=0')).status, 400);
+
+  const overview = await (await get('licence-orders?from=2026-11-24&to=2026-11-24&status=verified')).text();
+  assert.match(overview, /"id":"fictional-order"/);
+  const response = await get('licence-orders.csv?from=2026-11-24&to=2026-11-24&status=verified');
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.match(response.headers.get('Content-Disposition') ?? '', /^attachment; filename="hnmo-test-licence-orders-\d{4}-\d{2}-\d{2}\.csv"$/);
+  const csv = await response.text();
+  assert.match(csv, /2026-11-24 00:30:28 GMT\+11:00/);
+  assert.match(csv, /"'=Fictional, ""package""","AUD","1495","verified"/);
+  const unrelated = await (await get('licence-orders.csv?status=pending')).text();
+  assert.doesNotMatch(unrelated, /fictional-order/);
+  for (const output of [csv, overview]) {
+    assert.doesNotMatch(output, /fictional-buyer|192\.0\.2\.9|cs_test_|pi_fictional|catalogue metadata/);
+  }
+});

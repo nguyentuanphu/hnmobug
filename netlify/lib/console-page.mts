@@ -85,7 +85,11 @@ details .muted { word-break:break-word; }
 const BASE = ${JSON.stringify(base)};
 const T = {
   en: { setupTitle:'First use: set your sign-in', setupHint:'Paste the hub key (HUB_KEY from the site settings) to prove it is you, and choose the console password. This is asked only once.', hubKey:'Hub key (HUB_KEY)', newPassword:'New password (12 characters or more)', again:'The password again', setupSave:'Save', differ:'The two passwords differ or are shorter than 12 characters.', appTitle:'Add the console to your authenticator app', appHint:'In Google Authenticator or Microsoft Authenticator: add an account, choose "Enter a setup key", name it HNMO console, and type the key below (time based). Then type the 6-digit code it shows.', appKey:'Key:', appLink:'or open this link on the phone', password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
-    commerce:'Licence packages', orderReview:'Recent test orders', commerceHint:'Enter packages as a JSON array. Each package needs id, name, description, currency (aud, usd or vnd) and unitAmount (cents for AUD/USD, whole đồng for VND). Checkout is test-only. Review paid orders before issuing any licence.', invalidPackages:'Could not save. Review the package fields and make sure each ID is unique.', commerceUnavailable:'Could not load licence packages.', paid:'Test payment verified', review:'Refund or dispute — review required',
+    commerce:'Licence packages', orderReview:'Test licence orders', commerceHint:'Enter packages as a JSON array. Each package needs id, name, description, currency (aud, usd or vnd) and unitAmount (cents for AUD/USD, whole đồng for VND). Checkout is test-only. Review paid orders before issuing any licence.', invalidPackages:'Could not save. Review the package fields and make sure each ID is unique.', commerceUnavailable:'Could not load licence packages.', paid:'Test payment verified', review:'Refund or dispute — review required',
+    orderStatus:'Status', allOrders:'All statuses', orderFrom:'From date (Sydney)', orderTo:'To date (Sydney)',
+    pendingOrder:'Awaiting test payment', filterOrders:'Apply filters', resetOrders:'Clear filters', exportOrders:'Download filtered CSV',
+    ordersLoading:'Loading test orders…', ordersUnavailable:'Could not load test orders.', ordersInvalid:'Enter a valid Sydney date range.',
+    noOrders:'No test orders match these filters.', previousOrders:'Previous', nextOrders:'Next', orderPage:'Page',
     hosts:'Servers', real:'Real hosts', test:'Test machines', setups:'First setups', requests:'Licence requests', licences:'Licences', bugs:'Bug reports', security:'Security',
     lastSeen:'Last report', licence:'Licence', version:'Version', players:'Players (most at once / limit)', accounts:'Accounts / characters', health:'Crashes / errors this week', files:'Files', features:'Features',
     none:'None yet.', free:'free (10 players)', issue:'Issue a licence', decline:'Decline', revoke:'Withdraw', undo:'Give back', name:'Name', contact:'Contact', asked:'Players asked', note:'Note', machine:'Computer id', expires:'Last day (empty: none)', maxPlayers:'Players at once', bind:'Only this computer',
@@ -94,7 +98,11 @@ const T = {
     host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id',
     noMuName:'(no MU name yet)', noHost:'host not filled in', markTest:'It is a test machine', markReal:'It is a real host', allTest:'Mark every real host here as a test machine', allTestAsk:'Mark all these as your test machines?', details:'Details', firstSetup:'First setup', noReport:'no weekly report yet', latestTitle:'Newest HNMO release', latestHint:'The version HNMO servers are offered (their admin panel shows it with an Update button). Build it first: the package workflow uploads each version to the update storage. Empty version: none offered. The download link may stay empty (the version’s HNMO.zip on the update storage).', latestTag:'Version (1.0.0)', latestUrl:'Download link of the whole folder (optional)', latestNotes:'Notes', save:'Save', machineId:'Machine id', plugins:'plug-ins', reportsSent:'bug reports', none2:'No test machines.' },
   vi: { setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
-    commerce:'Gói giấy phép', orderReview:'Đơn thử nghiệm gần đây', commerceHint:'Nhập danh sách gói dạng JSON. Mỗi gói cần id, name, description, currency (aud, usd hoặc vnd) và unitAmount (cent cho AUD/USD, số đồng cho VND). Chỉ thanh toán thử nghiệm. Kiểm tra đơn đã trả tiền trước khi cấp giấy phép.', invalidPackages:'Không lưu được. Kiểm tra các trường và đảm bảo mỗi mã gói là duy nhất.', commerceUnavailable:'Không tải được các gói giấy phép.', paid:'Đã xác minh thanh toán thử', review:'Có hoàn tiền hoặc tranh chấp, cần kiểm tra',
+    commerce:'Gói giấy phép', orderReview:'Đơn giấy phép thử nghiệm', commerceHint:'Nhập danh sách gói dạng JSON. Mỗi gói cần id, name, description, currency (aud, usd hoặc vnd) và unitAmount (cent cho AUD/USD, số đồng cho VND). Chỉ thanh toán thử nghiệm. Kiểm tra đơn đã trả tiền trước khi cấp giấy phép.', invalidPackages:'Không lưu được. Kiểm tra các trường và đảm bảo mỗi mã gói là duy nhất.', commerceUnavailable:'Không tải được các gói giấy phép.', paid:'Đã xác minh thanh toán thử', review:'Có hoàn tiền hoặc tranh chấp, cần kiểm tra',
+    orderStatus:'Trạng thái', allOrders:'Mọi trạng thái', orderFrom:'Từ ngày (giờ Sydney)', orderTo:'Đến ngày (giờ Sydney)',
+    pendingOrder:'Đang chờ thanh toán thử', filterOrders:'Lọc đơn', resetOrders:'Xóa bộ lọc', exportOrders:'Tải CSV theo bộ lọc',
+    ordersLoading:'Đang tải đơn thử nghiệm…', ordersUnavailable:'Không tải được đơn thử nghiệm.', ordersInvalid:'Nhập khoảng ngày hợp lệ theo giờ Sydney.',
+    noOrders:'Không có đơn thử nghiệm nào khớp bộ lọc.', previousOrders:'Trang trước', nextOrders:'Trang sau', orderPage:'Trang',
     hosts:'Server', real:'Máy thật', test:'Máy test', setups:'Cài đặt lần đầu', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
     lastSeen:'Báo cáo gần nhất', licence:'Giấy phép', version:'Phiên bản', players:'Người chơi (cao nhất / giới hạn)', accounts:'Tài khoản / nhân vật', health:'Sập / lỗi tuần này', files:'File', features:'Tính năng',
     none:'Chưa có.', free:'miễn phí (10 người)', issue:'Cấp giấy phép', decline:'Từ chối', revoke:'Thu hồi', undo:'Trả lại', name:'Tên', contact:'Liên lạc', asked:'Số người xin', note:'Ghi chú', machine:'Mã máy', expires:'Ngày cuối (trống: không hạn)', maxPlayers:'Số người cùng lúc', bind:'Chỉ máy này',
@@ -131,6 +139,86 @@ function render() {
   }
   const view = document.getElementById('view'); view.replaceChildren(VIEWS[tab]());
 }
+function orderResults(initial) {
+  const results = el('div');
+  const status = el('select', { id:'order-status' },
+    ...[['', 'allOrders'], ['pending', 'pendingOrder'], ['verified', 'paid'], ['review', 'review']]
+      .map(([value, label]) => el('option', { value, text:t(label) })));
+  const from = el('input', { id:'order-from', type:'date' });
+  const to = el('input', { id:'order-to', type:'date' });
+  const submit = el('button', { type:'submit', class:'primary', text:t('filterOrders') });
+  const clear = el('button', { type:'button', text:t('resetOrders'), on:{ click:() => {
+    status.value = from.value = to.value = '';
+    loadOrders(1, '');
+  } } });
+  const download = el('a', { text:t('exportOrders'), download:'' });
+  const message = el('p', { role:'status' });
+  const previous = el('button', { type:'button', text:t('previousOrders'), on:{ click:() => loadOrders(page - 1, applied) } });
+  const next = el('button', { type:'button', text:t('nextOrders'), on:{ click:() => loadOrders(page + 1, applied) } });
+  const pagination = el('div', { class:'row' }, previous, next);
+  const list = el('ul');
+  let page = 1, applied = '';
+  let pending = false;
+  const field = (label, input) => el('label', {}, t(label), input);
+  const form = el('form', { on:{ submit:event => {
+    event.preventDefault();
+    if (from.value && to.value && from.value > to.value) {
+      message.textContent = t('ordersInvalid');
+      return;
+    }
+    const query = new URLSearchParams();
+    if (status.value) query.set('status', status.value);
+    if (from.value) query.set('from', from.value);
+    if (to.value) query.set('to', to.value);
+    loadOrders(1, query.toString());
+  } } }, el('div', { class:'grid' }, field('orderStatus', status), field('orderFrom', from), field('orderTo', to)),
+    el('p', { class:'row' }, submit, clear, download));
+
+  function display(data, number, query) {
+    page = number;
+    applied = query;
+    list.replaceChildren();
+    for (const order of data.orders) {
+      const { currency, unitAmount, name } = order.package;
+      const amount = new Intl.NumberFormat(lang, { style:'currency', currency }).format(currency === 'vnd' ? unitAmount : unitAmount / 100);
+      const labels = [when(order.at), name, amount, order.id, t(order.paid ? 'paid' : 'pendingOrder'), order.flagged ? t('review') : ''];
+      list.append(el('li', { text:labels.filter(Boolean).join(' · ') }));
+    }
+    previous.disabled = page === 1;
+    next.disabled = !data.hasMore;
+    pagination.hidden = page === 1 && !data.hasMore;
+    message.textContent = data.orders.length ? t('orderPage') + ' ' + number : t('noOrders');
+    download.href = BASE + '/api/licence-orders.csv' + (query ? '?' + query : '');
+    download.hidden = data.orders.length === 0;
+  }
+
+  async function loadOrders(number, query) {
+    if (pending) return;
+    pending = true;
+    const wasPreviousDisabled = previous.disabled;
+    const wasNextDisabled = next.disabled;
+    submit.disabled = clear.disabled = previous.disabled = next.disabled = true;
+    message.textContent = t('ordersLoading');
+    try {
+      const params = new URLSearchParams(query);
+      params.set('page', String(number));
+      const data = await api('licence-orders?' + params.toString());
+      display(data, number, query);
+    } catch (error) {
+      message.textContent = t(error.message === 'filters' ? 'ordersInvalid' : 'ordersUnavailable');
+      previous.disabled = wasPreviousDisabled;
+      next.disabled = wasNextDisabled;
+    } finally {
+      pending = false;
+      submit.disabled = clear.disabled = false;
+    }
+  }
+
+  results.append(form, message, list, pagination);
+  display(initial, 1, '');
+  return results;
+}
+
 const VIEWS = {
   real() { return machineList(false); },
   test() { return machineList(true); },
@@ -149,7 +237,7 @@ const VIEWS = {
   },
   commerce() {
     const panel = el('div', { class:'card', 'aria-live':'polite' });
-    api('licence-commerce').then(({ packages, orders }) => {
+    api('licence-commerce?page=1').then(({ packages, orders, hasMore }) => {
       const input = el('textarea', { id:'package-catalogue', rows:'12', spellcheck:'false', on:{ input:() => { editing = true; } } });
       input.value = JSON.stringify(packages, null, 2);
       const message = el('p', { role:'status' });
@@ -167,13 +255,7 @@ const VIEWS = {
           save.disabled = false;
         }
       } } }, el('label', { for:'package-catalogue', text:t('commerce') }), el('p', { text:t('commerceHint') }), input, save, message);
-      const list = el('ul');
-      for (const order of orders) {
-        const { currency, unitAmount, name } = order.package;
-        const amount = new Intl.NumberFormat(lang, { style:'currency', currency }).format(currency === 'vnd' ? unitAmount : unitAmount / 100);
-        list.append(el('li', { text:[when(order.at), name, amount, order.id, t(order.paid ? 'paid' : 'open'), order.flagged ? t('review') : ''].filter(Boolean).join(' · ') }));
-      }
-      panel.replaceChildren(form, el('h2', { text:t('orderReview') }), orders.length ? list : el('p', { text:t('none') }));
+      panel.replaceChildren(form, el('h2', { text:t('orderReview') }), orderResults({ orders, hasMore }));
     }).catch(() => { panel.textContent = t('commerceUnavailable'); });
     return panel;
   },

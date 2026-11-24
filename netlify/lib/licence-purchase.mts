@@ -159,18 +159,3 @@ export async function recordStripeEvent(store: Store, event: unknown): Promise<'
   await store.setJSON('licence-payments/' + id + '/' + supplied.id, { at, intent });
   return 'applied';
 }
-
-export async function recentLicenceOrders(store: Store) {
-  const { blobs } = await store.list({ prefix: ordersPrefix });
-  const rows = await Promise.all(blobs.map(async b => await store.get(b.key, { type: 'json' }) as Order | null));
-  const recent = rows.filter((row): row is Order => row !== null)
-    .sort((left, right) => right.at.localeCompare(left.at))
-    .slice(0, 50);
-  return Promise.all(recent.map(async order => {
-    const [payments, flags] = await Promise.all([
-      store.list({ prefix: 'licence-payments/' + order.id + '/' }),
-      store.list({ prefix: 'licence-payment-flags/' + order.id + '/' }),
-    ]);
-    return { id: order.id, package: order.package, at: order.at, paid: payments.blobs.length > 0, flagged: flags.blobs.length > 0 };
-  }));
-}
