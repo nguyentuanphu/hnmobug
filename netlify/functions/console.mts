@@ -9,6 +9,7 @@ import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../li
 import { sydneyDay } from '../lib/day.mts';
 import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
+import { readPackages, recentLicenceOrders, savePackages } from '../lib/licence-purchase.mts';
 
 interface Session { exp: number; d: string }
 interface Trust { exp: number; d: string }
@@ -101,6 +102,11 @@ export default async (req: Request, context: { ip?: string }) => {
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie('hnmo_session', '', base, 0) } });
   }
 
+  if (action === 'licence-commerce' && req.method === 'GET') {
+    const [packages, orders] = await Promise.all([readPackages(store), recentLicenceOrders(store)]);
+    return json({ packages, orders });
+  }
+
   if (action === 'state' && req.method === 'GET') {
     const key = await licenceKey(store);
     const [hosts, requests, licences, devices, setups, seen, marks] = await Promise.all([
@@ -130,6 +136,10 @@ export default async (req: Request, context: { ip?: string }) => {
 
   if (req.method !== 'POST') return json({ error: 'unknown' }, 404);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (action === 'licence-commerce') {
+    return await savePackages(store, body?.packages) ? json({ ok: true }) : json({ error: 'packages' }, 400);
+  }
 
   if (action === 'make-key') {
     const existing = await licenceKey(store);

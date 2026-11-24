@@ -85,6 +85,7 @@ details .muted { word-break:break-word; }
 const BASE = ${JSON.stringify(base)};
 const T = {
   en: { setupTitle:'First use: set your sign-in', setupHint:'Paste the hub key (HUB_KEY from the site settings) to prove it is you, and choose the console password. This is asked only once.', hubKey:'Hub key (HUB_KEY)', newPassword:'New password (12 characters or more)', again:'The password again', setupSave:'Save', differ:'The two passwords differ or are shorter than 12 characters.', appTitle:'Add the console to your authenticator app', appHint:'In Google Authenticator or Microsoft Authenticator: add an account, choose "Enter a setup key", name it HNMO console, and type the key below (time based). Then type the 6-digit code it shows.', appKey:'Key:', appLink:'or open this link on the phone', password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
+    commerce:'Licence packages', orderReview:'Recent test orders', commerceHint:'Enter packages as a JSON array. Each package needs id, name, description, currency (aud, usd or vnd) and unitAmount (cents for AUD/USD, whole đồng for VND). Checkout is test-only. Review paid orders before issuing any licence.', invalidPackages:'Could not save. Review the package fields and make sure each ID is unique.', commerceUnavailable:'Could not load licence packages.', paid:'Test payment verified', review:'Refund or dispute — review required',
     hosts:'Servers', real:'Real hosts', test:'Test machines', setups:'First setups', requests:'Licence requests', licences:'Licences', bugs:'Bug reports', security:'Security',
     lastSeen:'Last report', licence:'Licence', version:'Version', players:'Players (most at once / limit)', accounts:'Accounts / characters', health:'Crashes / errors this week', files:'Files', features:'Features',
     none:'None yet.', free:'free (10 players)', issue:'Issue a licence', decline:'Decline', revoke:'Withdraw', undo:'Give back', name:'Name', contact:'Contact', asked:'Players asked', note:'Note', machine:'Computer id', expires:'Last day (empty: none)', maxPlayers:'Players at once', bind:'Only this computer',
@@ -93,6 +94,7 @@ const T = {
     host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id',
     noMuName:'(no MU name yet)', noHost:'host not filled in', markTest:'It is a test machine', markReal:'It is a real host', allTest:'Mark every real host here as a test machine', allTestAsk:'Mark all these as your test machines?', details:'Details', firstSetup:'First setup', noReport:'no weekly report yet', latestTitle:'Newest HNMO release', latestHint:'The version HNMO servers are offered (their admin panel shows it with an Update button). Build it first: the package workflow uploads each version to the update storage. Empty version: none offered. The download link may stay empty (the version’s HNMO.zip on the update storage).', latestTag:'Version (1.0.0)', latestUrl:'Download link of the whole folder (optional)', latestNotes:'Notes', save:'Save', machineId:'Machine id', plugins:'plug-ins', reportsSent:'bug reports', none2:'No test machines.' },
   vi: { setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
+    commerce:'Gói giấy phép', orderReview:'Đơn thử nghiệm gần đây', commerceHint:'Nhập danh sách gói dạng JSON. Mỗi gói cần id, name, description, currency (aud, usd hoặc vnd) và unitAmount (cent cho AUD/USD, số đồng cho VND). Chỉ thanh toán thử nghiệm. Kiểm tra đơn đã trả tiền trước khi cấp giấy phép.', invalidPackages:'Không lưu được. Kiểm tra các trường và đảm bảo mỗi mã gói là duy nhất.', commerceUnavailable:'Không tải được các gói giấy phép.', paid:'Đã xác minh thanh toán thử', review:'Có hoàn tiền hoặc tranh chấp, cần kiểm tra',
     hosts:'Server', real:'Máy thật', test:'Máy test', setups:'Cài đặt lần đầu', requests:'Yêu cầu giấy phép', licences:'Giấy phép', bugs:'Báo lỗi', security:'Bảo mật',
     lastSeen:'Báo cáo gần nhất', licence:'Giấy phép', version:'Phiên bản', players:'Người chơi (cao nhất / giới hạn)', accounts:'Tài khoản / nhân vật', health:'Sập / lỗi tuần này', files:'File', features:'Tính năng',
     none:'Chưa có.', free:'miễn phí (10 người)', issue:'Cấp giấy phép', decline:'Từ chối', revoke:'Thu hồi', undo:'Trả lại', name:'Tên', contact:'Liên lạc', asked:'Số người xin', note:'Ghi chú', machine:'Mã máy', expires:'Ngày cuối (trống: không hạn)', maxPlayers:'Số người cùng lúc', bind:'Chỉ máy này',
@@ -123,9 +125,9 @@ function render() {
   const tabs = document.getElementById('tabs'); tabs.replaceChildren();
   const openRequests = state.requests.filter((r) => r.status === 'open').length;
   const counts = { real: machines(false).length, test: machines(true).length };
-  for (const id of ['real', 'test', 'requests', 'licences', 'bugs', 'security']) {
+  for (const id of ['real', 'test', 'requests', 'licences', 'commerce', 'bugs', 'security']) {
     const label = t(id) + (id === 'requests' && openRequests ? ' (' + openRequests + ')' : id in counts ? ' (' + counts[id] + ')' : '');
-    tabs.append(el('button', { type:'button', 'aria-pressed': String(tab === id), text: label, on:{ click:() => { tab = id; render(); } } }));
+    tabs.append(el('button', { type:'button', 'aria-pressed': String(tab === id), text: label, on:{ click:() => { tab = id; editing = false; render(); } } }));
   }
   const view = document.getElementById('view'); view.replaceChildren(VIEWS[tab]());
 }
@@ -144,6 +146,36 @@ const VIEWS = {
       wrap.append(card);
     }
     return wrap;
+  },
+  commerce() {
+    const panel = el('div', { class:'card', 'aria-live':'polite' });
+    api('licence-commerce').then(({ packages, orders }) => {
+      const input = el('textarea', { id:'package-catalogue', rows:'12', spellcheck:'false', on:{ input:() => { editing = true; } } });
+      input.value = JSON.stringify(packages, null, 2);
+      const message = el('p', { role:'status' });
+      const save = el('button', { type:'submit', class:'primary', text:t('save') });
+      const form = el('form', { on:{ submit:async event => {
+        event.preventDefault();
+        save.disabled = true;
+        try {
+          await api('licence-commerce', { packages:JSON.parse(input.value) });
+          editing = false;
+          message.textContent = t('saved');
+        } catch {
+          message.textContent = t('invalidPackages');
+        } finally {
+          save.disabled = false;
+        }
+      } } }, el('label', { for:'package-catalogue', text:t('commerce') }), el('p', { text:t('commerceHint') }), input, save, message);
+      const list = el('ul');
+      for (const order of orders) {
+        const { currency, unitAmount, name } = order.package;
+        const amount = new Intl.NumberFormat(lang, { style:'currency', currency }).format(currency === 'vnd' ? unitAmount : unitAmount / 100);
+        list.append(el('li', { text:[when(order.at), name, amount, order.id, t(order.paid ? 'paid' : 'open'), order.flagged ? t('review') : ''].filter(Boolean).join(' · ') }));
+      }
+      panel.replaceChildren(form, el('h2', { text:t('orderReview') }), orders.length ? list : el('p', { text:t('none') }));
+    }).catch(() => { panel.textContent = t('commerceUnavailable'); });
+    return panel;
   },
   licences() {
     const wrap = el('div', {}, el('div', { class:'card' }, el('h2', { text: t('issue') }), issueForm({})));
