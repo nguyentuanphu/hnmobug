@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Host your own HNMO server. Launch on Windows, invite players through their browser, and tune your world from the built-in admin panel.">
+  <meta name="description" content="Start a free HNMO game server on Windows. Play at home, host a gaming café, or welcome players online. Configure your world from the built-in admin panel." data-vi-content="Tự mở server HNMO miễn phí trên Windows. Chơi tại nhà, mở server cho tiệm net hoặc đón người chơi online. Tùy chỉnh game ngay trong bảng quản trị tích hợp.">
   <meta name="theme-color" content="#111411">
-  <title>HNMO — Host your own game server</title>
+  <title>HNMO — Start your own game server for free</title>
   <link rel="stylesheet" href="/showcase.css">
   <script src="/showcase.js" defer></script>
 </head>
@@ -17,7 +17,7 @@
       <nav aria-label="HNMO">
         <a href="#panel" data-vi="Quản trị">Admin panel</a>
         <a href="#setup" data-vi="Cài đặt">Setup</a>
-        <a href="#licences" data-vi="Giấy phép">Licences</a>
+        <a href="#hosting" data-vi="Chơi cùng nhau">Ways to host</a>
       </nav>
       <div class="header-actions">
         <button type="button" data-language lang="vi" hidden>Tiếng Việt</button>
@@ -29,10 +29,10 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="shell hero-inner">
         <p class="eyebrow" data-vi="Game nhập vai 3D tự lưu trữ">Self-hosted 3D online RPG</p>
-        <h1 id="hero-title" data-vi="Tự mở server HNMO của bạn.">Host your own HNMO server.</h1>
-        <p class="hero-lead" data-vi="Khởi chạy trên Windows. Mời người chơi tham gia bằng trình duyệt. Quản lý cộng đồng và tùy chỉnh thế giới game ngay trong bảng quản trị tích hợp.">Launch on Windows, invite players through their browser, and shape your world from the built-in admin panel.</p>
+        <h1 id="hero-title" data-vi="Tự mở server HNMO miễn phí.">Start your own HNMO server for free.</h1>
+        <p class="hero-lead" data-vi="Tải về, giải nén rồi mở HNMO trên Windows. Người chơi vào game bằng trình duyệt, còn bạn quản lý server và chỉnh luật chơi ngay trong bảng quản trị.">Download, extract, and launch HNMO on Windows. Players join through their browser, and you manage the server and set the rules from the built-in admin panel.</p>
         <div class="actions">
-          <a class="button primary" href="#setup" data-vi="Cách mở server">How to host</a>
+          <a class="button primary" href="#setup" data-vi="Bắt đầu miễn phí">Get started free</a>
           <a class="button secondary" href="#panel" data-vi="Xem bảng quản trị">See the admin panel</a>
         </div>
       </div>
@@ -40,7 +40,8 @@
 
     <section class="shell section" id="panel" aria-labelledby="panel-title">
       <p class="eyebrow" data-vi="Bảng quản trị">Built-in admin panel</p>
-      <h2 id="panel-title" data-vi="Vận hành server theo cách của bạn.">Run the server your way.</h2>
+      <h2 id="panel-title" data-vi="Chỉnh luật chơi ngay trong trình duyệt.">Configure your game from the browser.</h2>
+      <p class="section-lead" data-vi="Dùng cùng một bảng quản trị để xem ai đang chơi, quản lý tài khoản và tùy chỉnh trải nghiệm của người chơi.">Use one panel to see who's playing, manage accounts, and change how your world plays.</p>
       <div class="panel-tour">
         <div class="tour-options" role="group" aria-label="Admin panel" data-vi-label="Bảng quản trị">
           <button type="button" aria-controls="tour-server" aria-pressed="true" data-tour="tour-server">
@@ -53,7 +54,7 @@
           </button>
           <button type="button" aria-controls="tour-world" aria-pressed="false" data-tour="tour-world">
             <strong data-vi="Tùy chỉnh thế giới">Shape your world</strong>
-            <span data-vi="Điều chỉnh tốc độ lên cấp, vật phẩm rơi và vị trí quái xuất hiện.">Tune progression, item drops, and monster spawns.</span>
+            <span data-vi="Chỉnh tốc độ lên cấp, vật phẩm rơi và dùng trình sửa bản đồ để đặt vị trí quái xuất hiện.">Set experience and item drop rates, and place monster spawns with the map editor.</span>
           </button>
         </div>
         <div class="tour-frame">
@@ -74,8 +75,15 @@
           </div>
           <div class="tour-screen" id="tour-world" hidden>
             <h3 data-vi="Cấu hình game">Game configuration</h3>
-            <div class="tour-row"><div><strong data-vi="Tốc độ nhận kinh nghiệm">Experience rate</strong><small data-vi="Tiến trình nhân vật">Character progression</small></div><span class="status">×5</span></div>
+            <form class="tour-row rate-demo" id="rate-demo">
+              <div><label for="demo-rate" data-vi="Tốc độ nhận kinh nghiệm">Experience rate</label><small id="demo-rate-status" role="status"><span data-vi="Mức đang áp dụng">Applied rate</span> <strong id="applied-rate">×1</strong></small></div>
+              <div class="rate-controls">
+                <select id="demo-rate"><option>×1</option><option selected>×5</option><option>×10</option></select>
+                <button class="button primary" type="submit" data-vi="Lưu thử">Try saving</button>
+              </div>
+            </form>
             <div class="tour-row"><div><strong data-vi="Vị trí quái xuất hiện">Monster spawns</strong><small data-vi="Khu vực xuất hiện trên bản đồ">Map spawn areas</small></div><span class="status" data-vi="Trình sửa bản đồ">Map editor</span></div>
+            <p class="tour-note" data-vi="Trên server của bạn, mở cài đặt chung, đổi tốc độ nhận kinh nghiệm, lưu rồi tải lại server game để áp dụng.">On your server, open the general game settings, change the experience rate, save, and reload the game server to apply it.</p>
           </div>
         </div>
       </div>
@@ -83,7 +91,7 @@
       <div class="product-screens">
         <figure>
           <img src="/images/hnmo-gameplay.webp" width="1200" height="564" loading="lazy" alt="A player character in the HNMO browser game" data-vi-alt="Nhân vật người chơi trong game HNMO trên trình duyệt">
-          <figcaption data-vi="Góc nhìn người chơi trong trình duyệt">The player’s view in the browser</figcaption>
+          <figcaption data-vi="Người chơi khám phá thế giới 3D, lập nhóm hoặc bang hội, rồi xem lịch sự kiện và bảng xếp hạng trên trang game.">Players explore a 3D world, form parties and guilds, and check the event schedule and rankings on the game site.</figcaption>
         </figure>
         <figure>
           <img src="/images/hnmo-admin.webp" width="1200" height="564" loading="lazy" alt="HNMO admin dashboard showing server status and player counts on a demo server" data-vi-alt="Bảng quản trị HNMO hiển thị trạng thái server và số người chơi trên server mẫu">
@@ -95,40 +103,50 @@
     <section class="setup-band" id="setup" aria-labelledby="setup-title">
       <div class="shell section">
         <p class="eyebrow" data-vi="Cài đặt trên Windows">Windows setup</p>
-        <h2 id="setup-title" data-vi="Từ gói tải xuống đến thế giới của bạn.">From download to your own world.</h2>
+        <h2 id="setup-title" data-vi="Tải về. Giải nén. Chạy game.">Download. Extract. Play.</h2>
+        <p class="section-lead" data-vi="Gói Windows có sẵn server, game chạy trên trình duyệt, bảng quản trị và cơ sở dữ liệu. Bạn có thể bắt đầu miễn phí với tối đa 10 người chơi cùng lúc.">The Windows download bundles the server, browser game, admin panel, and database. Start free with up to 10 players online at once.</p>
         <ol class="steps">
-          <li><h3 data-vi="Tải và giải nén">Download and extract</h3><p data-vi="Gói Windows có sẵn server, bản chơi trên web, bảng quản trị và cơ sở dữ liệu.">The Windows package includes the server, web client, admin panel, and database.</p></li>
-          <li><h3 data-vi="Khởi chạy HNMO">Start HNMO</h3><p data-vi="Mở Start HNMO.bat và chờ khởi tạo dữ liệu lần đầu. Sau đó, tạo tài khoản quản trị trên máy chủ.">Open Start HNMO.bat and let it prepare the save data. Then create your first admin account on the host machine.</p></li>
-          <li><h3 data-vi="Mời người chơi">Invite players</h3><p data-vi="Chia sẻ địa chỉ HNMO với người chơi qua mạng nội bộ hoặc kết nối từ xa đã cấu hình. Họ tham gia bằng trình duyệt.">Share your HNMO address on your local network or configured remote connection. Players join in their browser.</p></li>
+          <li><h3 data-vi="Tải và giải nén">Download and extract</h3><p data-vi="Tải gói Windows xuống một máy tính và giải nén tệp ZIP vào thư mục HNMO.">Download the Windows package to one PC and extract the ZIP into an HNMO folder.</p></li>
+          <li><h3 data-vi="Mở Start HNMO.bat">Open Start HNMO.bat</h3><p data-vi="Nhấp đúp để khởi chạy. HNMO tự khởi tạo dữ liệu lưu trong vài phút ở lần đầu, rồi mở trang game trong trình duyệt.">Double-click the launcher. On the first run, HNMO takes a few minutes to prepare your save data and then opens the game site in your browser.</p></li>
+          <li><h3 data-vi="Tạo tài khoản quản trị và mời người chơi">Set up admin and invite players</h3><p data-vi="Trên máy chủ, mở bảng quản trị tại localhost:8095 để tạo tài khoản quản trị đầu tiên. Chia sẻ địa chỉ game để mọi người vào chơi bằng trình duyệt và giữ HNMO chạy trong lúc chơi.">On the host PC, open the panel at localhost:8095 to create your first admin account. Share the game address and keep HNMO running while people play.</p></li>
         </ol>
         <div class="actions">
-          <a class="button primary" href="https://github.com/nguyentuanphu/HNMO/releases/latest/download/HNMO-windows.zip" data-vi="Tải bản Windows">Download for Windows</a>
+          <a class="button primary" href="https://github.com/nguyentuanphu/HNMO/releases/latest/download/HNMO-windows.zip" data-vi="Tải miễn phí cho Windows">Free Windows download</a>
           <a class="text-link" href="https://github.com/nguyentuanphu/HNMO/blob/main/friends/README.md" data-vi="Đọc hướng dẫn cài đặt">Read the setup guide</a>
         </div>
       </div>
     </section>
 
-    <section class="shell section" id="licences" aria-labelledby="licence-title">
-      <div class="licence-layout">
+    <section class="shell section" id="hosting" aria-labelledby="hosting-title">
+      <h2 id="hosting-title" data-vi="Chơi tại nhà, ở tiệm net hoặc mở server toàn cầu.">Host at home, in a gaming café, or worldwide.</h2>
+      <div class="hosting-options">
+        <article>
+          <h3 data-vi="Ở nhà hoặc tiệm net">Home or gaming café</h3>
+          <p data-vi="Chạy HNMO trên một máy Windows. Bạn bè hoặc khách trong tiệm dùng trình duyệt trên các máy cùng mạng nội bộ để vào game.">Run HNMO on one Windows PC. Friends or café customers on the same local network open the game in their browsers.</p>
+        </article>
+        <article>
+          <h3 data-vi="Chơi online với bạn bè">Play online with friends</h3>
+          <p data-vi="Dùng mạng riêng để mời bạn bè từ xa. Chia sẻ liên kết game khi mọi người đã kết nối vào mạng đó.">Use a private network to invite friends from anywhere. Share the game link once they're connected.</p>
+          <a class="text-link" href="https://github.com/nguyentuanphu/HNMO/blob/main/friends/README.md#1-play-together-with-the-host-no-download" data-vi="Xem cách mời bạn bè">See how to invite friends</a>
+        </article>
+        <article>
+          <h3 data-vi="Mở server công khai toàn cầu">Go public worldwide</h3>
+          <p data-vi="Triển khai HNMO trên máy chủ kết nối Internet, cấu hình địa chỉ công khai và HTTPS, rồi chia sẻ liên kết game với cộng đồng ở bất cứ đâu.">Deploy HNMO on an internet-facing host, configure a public address and HTTPS, then share the game link with your community worldwide.</p>
+          <a class="text-link" href="https://github.com/nguyentuanphu/HNMO/blob/main/server/docs-website/docs/deployment/all-in-one.md#option-b--with-https" data-vi="Xem hướng dẫn triển khai">Read the deployment guide</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="support-band" aria-labelledby="support-title">
+      <div class="shell support-layout">
         <div>
-          <p class="eyebrow" data-vi="Sức chứa và hỗ trợ">Licences and support</p>
-          <h2 id="licence-title" data-vi="Bắt đầu với nhóm nhỏ. Mở rộng khi cần.">Start small. Add capacity as you grow.</h2>
-          <p data-vi="Gói tải xuống hỗ trợ tối đa 10 người chơi cùng lúc khi chưa có giấy phép. Nếu cần thêm chỗ, hãy liên hệ HNMO hoặc gửi yêu cầu từ server nếu phiên bản của bạn có mục này. Giấy phép do chủ hệ thống cấp.">The download supports up to 10 concurrent players without a licence. If you need more room, contact HNMO or send a request from your server if your build offers that option. The HNMO owner issues the licence.</p>
-          <a class="text-link" href="/packages.html" data-vi="Xem các gói giấy phép">View licence packages</a>
+          <h2 id="support-title" data-vi="Hỗ trợ">Support</h2>
+          <a class="text-link" href="https://github.com/nguyentuanphu/HNMO/issues" data-vi="Báo lỗi HNMO">Report an HNMO bug</a>
         </div>
         <div class="faq">
           <details>
-            <summary data-vi="Cài giấy phép như thế nào?">How do I install a licence?</summary>
-            <p data-vi="Đặt tệp license.hnmo do HNMO cấp cạnh trình khởi chạy rồi khởi động lại. Giới hạn người chơi mới sẽ hiện trong nhật ký server.">Place the issued license.hnmo file beside the launcher and restart HNMO. The server log shows your new player limit.</p>
-          </details>
-          <details>
-            <summary data-vi="Gửi báo cáo lỗi ở đâu?">Where do I report a bug?</summary>
-            <p data-vi="Chuyển tiếp báo cáo qua server nếu phiên bản đang chạy có tính năng này. Bạn cũng có thể gửi báo cáo trên trang lỗi HNMO. Hãy ghi rõ lỗi xảy ra ở đâu, cách lặp lại và phiên bản đang chạy.">Forward reports through your server if your build supports it, or use the HNMO issue tracker. Include where it happened, how to reproduce it, and the version you're running.</p>
-            <p><a href="https://github.com/nguyentuanphu/HNMO/issues" data-vi="Mở trang báo lỗi HNMO">Open the HNMO issue tracker</a></p>
-          </details>
-          <details>
             <summary data-vi="Server gửi dữ liệu gì đến HNMO?">What does the server share with HNMO?</summary>
-            <p data-vi="Server có hỗ trợ báo cáo qua hub gửi thông tin hệ thống và cấu hình game khi cài đặt lần đầu. Hub lưu địa chỉ IP nguồn và quốc gia của báo cáo này. Báo cáo định kỳ gồm tình trạng giấy phép, mức sử dụng, lỗi và báo cáo lỗi do chủ server chuyển tiếp. Các báo cáo tự động không thu thập tên đăng nhập, email hay mật khẩu của người chơi.">Servers with hub reporting send system and game configuration details on first setup. The hub records the source IP and country for that report. Periodic reports include licence status, usage totals, errors, and bug reports the host forwards. Automated reports do not collect player usernames, email addresses, or passwords.</p>
+            <p data-vi="Các phiên bản có tính năng báo cáo về HNMO gửi thông tin hệ thống và cấu hình game ở lần thiết lập đầu tiên. HNMO lưu địa chỉ IP nguồn và quốc gia của báo cáo đó. Báo cáo định kỳ gồm số liệu sử dụng, lỗi và các báo cáo lỗi do chủ server chuyển tiếp.">Builds with hub reporting send system and game configuration details on first setup. HNMO records the source IP and country for that report. Periodic reports include usage totals, errors, and bug reports the host forwards.</p>
           </details>
         </div>
       </div>

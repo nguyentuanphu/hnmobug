@@ -1,4 +1,6 @@
 const languageButton = document.querySelector('[data-language]');
+const description = document.querySelector('meta[name="description"]');
+const englishDescription = description.content;
 const translations = [...document.querySelectorAll('[data-vi], [data-vi-label], [data-vi-alt]')].map(element => ({
   element,
   english: element.textContent,
@@ -15,7 +17,8 @@ try {
 function applyLanguage() {
   const vietnamese = language === 'vi';
   document.documentElement.lang = language;
-  document.title = vietnamese ? 'HNMO — Tự mở server game' : 'HNMO — Host your own game server';
+  document.title = vietnamese ? 'HNMO — Tự mở server game miễn phí' : 'HNMO — Start your own game server for free';
+  description.content = vietnamese ? description.dataset.viContent : englishDescription;
   languageButton.lang = vietnamese ? 'en' : 'vi';
   languageButton.textContent = vietnamese ? 'English' : 'Tiếng Việt';
   for (const { element, english, label, alt } of translations) {
@@ -42,3 +45,8 @@ for (const button of tourButtons) {
     }
   });
 }
+
+document.getElementById('rate-demo').addEventListener('submit', event => {
+  event.preventDefault();
+  document.getElementById('applied-rate').textContent = document.getElementById('demo-rate').value;
+});
