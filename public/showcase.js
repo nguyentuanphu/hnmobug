@@ -17,7 +17,6 @@ try {
 function applyLanguage() {
   const vietnamese = language === 'vi';
   document.documentElement.lang = language;
-  document.title = vietnamese ? 'HNMO — Tự mở server game miễn phí' : 'HNMO — Start your own game server for free';
   description.content = vietnamese ? description.dataset.viContent : englishDescription;
   languageButton.lang = vietnamese ? 'en' : 'vi';
   languageButton.textContent = vietnamese ? 'English' : 'Tiếng Việt';
@@ -46,7 +45,7 @@ for (const button of tourButtons) {
   });
 }
 
-document.getElementById('rate-demo').addEventListener('submit', event => {
+document.getElementById('rate-demo')?.addEventListener('submit', event => {
   event.preventDefault();
   document.getElementById('applied-rate').textContent = document.getElementById('demo-rate').value;
 });

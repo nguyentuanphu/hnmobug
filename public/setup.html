@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Set up and host HNMO locally, invite friends through Tailscale, or publish a game server from home or a VPS." data-vi-content="Hướng dẫn cài HNMO, chơi trong mạng nội bộ, mời bạn qua Tailscale và mở server công khai tại nhà hoặc trên VPS.">
+  <meta name="theme-color" content="#111411">
+  <title data-vi="HNMO — Hướng dẫn mở server">HNMO — Hosting guide</title>
+  <link rel="stylesheet" href="/showcase.css">
+  <script src="/showcase.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main" data-vi="Đến nội dung chính">Skip to content</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="wordmark" href="/" aria-label="HNMO"><span aria-hidden="true">H</span> HNMO</a>
+      <nav aria-label="HNMO">
+        <a href="/#game" data-vi="Game">The game</a>
+        <a href="/#panel" data-vi="Quản trị">Admin panel</a>
+        <a href="/download" data-vi="Tải HNMO">Download HNMO</a>
+      </nav>
+      <div class="header-actions">
+        <button type="button" data-language lang="vi" hidden>Tiếng Việt</button>
+        <a href="/login" data-vi="Đăng nhập">Sign in</a>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="shell guide-page">
+    <header class="guide-intro">
+      <h1 data-vi="Hướng dẫn mở server HNMO">Host your HNMO server</h1>
+      <p class="section-lead" data-vi="Chạy thử trên máy của bạn trước. Sau đó chọn cách mời người chơi phù hợp với nhóm bạn, tiệm net hoặc cộng đồng của bạn.">Start by getting the game running on your own machine. Then choose how to bring in friends, café guests, or a public community.</p>
+      <nav class="guide-nav" aria-label="Hosting options" data-vi-label="Các cách mở server">
+        <a href="#local" data-vi="Cài và chơi nội bộ">Local setup</a>
+        <a href="#tailscale" data-vi="Mời qua Tailscale">Tailscale</a>
+        <a href="#home" data-vi="Mở online tại nhà">Public from home</a>
+        <a href="#vps" data-vi="Chạy trên VPS">VPS</a>
+      </nav>
+    </header>
+
+    <section id="local" class="guide-section" aria-labelledby="local-title">
+      <h2 id="local-title" data-vi="Cài trên máy của bạn">Set up on your own computer</h2>
+      <p data-vi="Tải và giải nén HNMO.zip rồi chọn cách khởi động cho hệ điều hành của bạn.">Download and extract HNMO.zip, then use the launcher for your operating system.</p>
+      <a class="button primary" href="/download" data-vi="Tải HNMO miễn phí">Download HNMO free</a>
+      <div class="platform-guides guide-platforms">
+        <details open>
+          <summary>Windows <span>x86-64</span></summary>
+          <p data-vi="PostgreSQL có sẵn trong gói. Nhấp đúp Start HNMO.bat và tìm biểu tượng HNMO cạnh đồng hồ. Nếu cần xem lỗi khởi động trong cửa sổ, chạy Start HNMO (window).bat.">PostgreSQL comes in the package. Double-click Start HNMO.bat and look for the HNMO tray icon. To see startup output in a window, use Start HNMO (window).bat.</p>
+        </details>
+        <details open>
+          <summary>macOS <span>Apple Silicon · Intel</span></summary>
+          <p data-vi="Cài PostgreSQL 16. Mở Terminal trong thư mục HNMO rồi chạy trình khởi động. Ví dụ dưới đây dùng Homebrew.">Install PostgreSQL 16. Open Terminal in the HNMO folder and start HNMO. This example uses Homebrew.</p>
+          <pre><code>brew install postgresql@16
+./start-hnmo.sh</code></pre>
+        </details>
+        <details open>
+          <summary>Linux <span>x86-64</span></summary>
+          <p data-vi="Ví dụ trên Ubuntu 24.04. Cài PostgreSQL 16, rồi chạy trình khởi động trong thư mục HNMO bằng tài khoản thường.">Example for Ubuntu 24.04. Install PostgreSQL 16, then run the launcher from the HNMO folder as a regular user.</p>
+          <pre><code>sudo apt update
+sudo apt install postgresql-16
+./start-hnmo.sh</code></pre>
+        </details>
+      </div>
+      <h3 data-vi="Thiết lập lần đầu">First launch</h3>
+      <ol class="guide-steps">
+        <li data-vi="Chờ HNMO tạo dữ liệu lần đầu, có thể mất vài phút. Trên máy chủ, mở http://localhost:8080/control. Nếu hiện First-start setup wizard, đặt tên game, chọn ngôn ngữ, giữ cổng mặc định rồi bấm Save and start HNMO.">Allow a few minutes for initial database setup. On the host, open http://localhost:8080/control. If you see the first-start setup wizard, enter your game name, pick a language, keep the default ports, then select Save and start HNMO.</li>
+        <li data-vi="Mở http://localhost:8095/users trên máy chủ. Tạo tài khoản quản trị đầu tiên với mật khẩu ít nhất 12 ký tự.">On the host, open http://localhost:8095/users and create the first admin account with a password of at least 12 characters.</li>
+        <li data-vi="Để người chơi tự tạo tài khoản trên web, tạo API key vai trò Administrator tại localhost:8095/api-keys rồi nhập khóa vào ô thiết lập tại localhost:8080/account.html trên máy chủ. Giữ khóa riêng.">To enable web registration, create an Administrator API key at localhost:8095/api-keys and enter it in the setup box at localhost:8080/account.html on the host. Keep the key private.</li>
+        <li data-vi="Mở http://localhost:8080, tạo một tài khoản người chơi rồi vào game thử. Dùng trang /control để kiểm tra trạng thái, đọc nhật ký hoặc sao lưu.">Open http://localhost:8080, create a player account, and enter the game to check that it works. Use /control to check status, view logs, or take a backup.</li>
+      </ol>
+      <figure class="feature-shot guide-shot">
+        <img src="/images/first-launch.webp" width="948" height="375" loading="lazy" alt="HNMO setup wizard with fields for the game name, address, language, and ports" data-vi-alt="Màn hình thiết lập HNMO có ô nhập tên game, địa chỉ, ngôn ngữ và các cổng">
+        <figcaption data-vi="Màn hình thiết lập lần đầu trên máy chủ HNMO">The first-start wizard on the HNMO host</figcaption>
+      </figure>
+      <h3 data-vi="Chơi trong nhà hoặc tiệm net">Play on the same network</h3>
+      <p data-vi="Trên máy chủ Windows, chạy ipconfig để tìm địa chỉ IPv4 của Wi-Fi hoặc Ethernet. Trên macOS hay Linux, xem địa chỉ IP trong cài đặt mạng. Nếu máy chủ là 192.168.1.20, người chơi cùng mạng mở http://192.168.1.20:8080 trong trình duyệt. Cho phép cổng web 8080 qua tường lửa trên mạng riêng.">On the Windows host, run ipconfig and look for the Wi-Fi or Ethernet IPv4 address. On macOS or Linux, check Network Settings. If the host is 192.168.1.20, players on the same network open http://192.168.1.20:8080 in their browsers. Allow web port 8080 through the host firewall on the private network.</p>
+      <p data-vi="Nếu thử trên máy khác không vào được, kiểm tra hai máy có cùng mạng và mạng khách có cô lập thiết bị hay không.">If a second device cannot connect, check that both devices are on the same network and that guest Wi-Fi is not isolating them.</p>
+    </section>
+
+    <section id="tailscale" class="guide-section" aria-labelledby="tailscale-title">
+      <h2 id="tailscale-title" data-vi="Mời bạn bè qua Tailscale">Invite friends through Tailscale</h2>
+      <p data-vi="Dùng cách này khi bạn bè ở xa và bạn chỉ muốn người được mời vào game. Bạn vẫn chạy HNMO trên máy của mình.">Use this for an invite-only group when friends are on different networks. HNMO still runs on your computer.</p>
+      <ol class="guide-steps">
+        <li><a href="https://tailscale.com/download" data-vi="Tải Tailscale">Download Tailscale</a>. <span data-vi="Cài và đăng nhập trên máy chủ HNMO cũng như thiết bị của từng người bạn.">Install it and sign in on the HNMO host and on each friend’s device.</span></li>
+        <li data-vi="Trong trang quản trị Tailscale, vào Machines, chọn máy chủ HNMO rồi dùng Share để gửi lời mời cho bạn bè. Họ mở lời mời bằng tài khoản Tailscale của mình và bấm chấp nhận.">In the Tailscale admin console, open Machines, select the HNMO host, and use Share to invite friends. They open and accept the invitation with their own Tailscale accounts.</li>
+        <li data-vi="Sao chép địa chỉ IPv4 Tailscale của máy chủ từ ứng dụng hoặc lệnh tailscale ip -4. Ví dụ máy chủ có IP 100.101.102.103 thì bạn gửi http://100.101.102.103:8080.">Copy the host’s Tailscale IPv4 address from its app or run tailscale ip -4. For example, if the host is 100.101.102.103, share http://100.101.102.103:8080.</li>
+        <li data-vi="Nhờ một người bạn thử mở liên kết trong trình duyệt khi Tailscale đang kết nối. Nếu không vào được, kiểm tra lời mời đã được chấp nhận, HNMO còn chạy và tường lửa máy chủ cho phép cổng 8080 từ mạng Tailscale.">Have a friend open the link in a browser while Tailscale is connected. If it fails, confirm they accepted the invitation, HNMO is running, and the host firewall allows port 8080 from the Tailscale network.</li>
+      </ol>
+    </section>
+
+    <section id="home" class="guide-section" aria-labelledby="home-title">
+      <h2 id="home-title" data-vi="Mở server công khai tại nhà">Go public from home</h2>
+      <p data-vi="Cần một máy chạy HNMO, quyền cấu hình router, tên miền và địa chỉ IP công khai có thể nhận kết nối từ ngoài.">You’ll need a host computer running HNMO, access to configure your router, a domain, and a public IP that can accept incoming connections.</p>
+      <ol class="guide-steps">
+        <li data-vi="Kiểm tra địa chỉ WAN trên router. Nếu nhà mạng dùng CGNAT hoặc chặn kết nối vào, hỏi nhà mạng về IP công khai hoặc chọn VPS. Với nhóm bạn đã có lời mời, bạn có thể dùng Tailscale.">Check the router’s WAN address. If your connection is behind carrier-grade NAT or inbound access is blocked, ask your provider about a public IP or use a VPS. Tailscale works for an invite-only group.</li>
+        <li data-vi="Đặt DHCP reservation cho máy chủ, ví dụ 192.168.1.20. Trỏ bản ghi A của play.example.com sang IPv4 công khai của router. Nếu IP thay đổi, cập nhật bản ghi DNS khi địa chỉ đổi.">Reserve a LAN address for the host in your router, for example 192.168.1.20. Point the play.example.com A record to your router’s public IPv4. If the public address changes, update DNS.</li>
+        <li data-vi="Trên router, chuyển tiếp TCP 80 và 443 tới máy chạy reverse proxy. Cho phép hai cổng này trong tường lửa máy chủ. Giữ cổng web 8080, quản trị 8095 và cơ sở dữ liệu ở mạng riêng.">On the router, forward TCP ports 80 and 443 to the machine running the reverse proxy. Allow these ports in the host firewall. Keep the web port 8080, admin port 8095, and database ports private.</li>
+        <li><a href="#https" data-vi="Cấu hình HTTPS theo ví dụ bên dưới">Set up HTTPS using the example below</a>. <span data-vi="Dùng điện thoại tắt Wi-Fi để mở tên miền, tạo tài khoản và vào game thử trước khi gửi link cho người chơi.">Use a phone on mobile data to open your domain, create a player account, and enter the game before sharing the link.</span></li>
+      </ol>
+    </section>
+
+    <section id="vps" class="guide-section" aria-labelledby="vps-title">
+      <h2 id="vps-title" data-vi="Chạy HNMO trên VPS">Run HNMO on a VPS</h2>
+      <p data-vi="Ví dụ dùng VPS Ubuntu 24.04 x86-64 có địa chỉ IPv4 công khai và tài khoản SSH thường có quyền sudo.">This example uses an Ubuntu 24.04 x86-64 VPS with a public IPv4 address and a regular SSH user with sudo access.</p>
+      <ol class="guide-steps">
+        <li data-vi="Đăng nhập SSH. Cài PostgreSQL 16 và giải nén HNMO vào thư mục của tài khoản đó. Dùng sudo để cài gói hệ thống và chạy HNMO bằng tài khoản thường.">Sign in over SSH. Install PostgreSQL 16 and extract HNMO under that user’s home folder. Use sudo for system packages and run HNMO as the regular user.</li>
+      </ol>
+      <pre><code>sudo apt update
+sudo apt install postgresql-16 unzip curl
+mkdir -p ~/games
+cd ~/games
+curl -fL https://hnmobug.netlify.app/download -o HNMO.zip
+unzip HNMO.zip
+cd HNMO
+./start-hnmo.sh</code></pre>
+      <ol class="guide-steps" start="2">
+        <li data-vi="Từ máy cá nhân, mở SSH tunnel bằng lệnh dưới đây. Thay user và vps.example.com bằng tài khoản và địa chỉ VPS. Giữ cửa sổ SSH mở trong lúc cấu hình game.">From your own computer, open an SSH tunnel using the command below. Replace user and vps.example.com with your account and VPS hostname. Keep this SSH terminal open while you set up HNMO.</li>
+      </ol>
+      <pre><code>ssh -N -L 8080:127.0.0.1:8080 -L 8095:127.0.0.1:8095 user@vps.example.com</code></pre>
+      <ol class="guide-steps" start="3">
+        <li data-vi="Trên máy cá nhân, mở localhost:8080/control và localhost:8095 qua tunnel. Tạo quản trị viên, bật đăng ký web và thử vào game theo phần thiết lập lần đầu.">On your own computer, open localhost:8080/control and localhost:8095 through the tunnel. Create your admin, configure web registration, and enter the game using the first-launch steps.</li>
+        <li data-vi="Trỏ bản ghi A của tên miền về IP VPS. Cho phép TCP 80 và 443 trên cả firewall của nhà cung cấp lẫn VPS. Giữ SSH cho quản trị và cho người chơi kết nối qua HTTPS.">Point your domain’s A record at the VPS IPv4. Allow TCP 80 and 443 in both the provider firewall and the VPS firewall. Keep SSH for administration and send player traffic through HTTPS.</li>
+        <li><a href="#https" data-vi="Thêm cấu hình HTTPS">Add the HTTPS configuration</a>. <span data-vi="Khi chạy ổn, dùng Install as a service trong /control nếu VPS hỗ trợ và thử khởi động lại VPS để xác nhận HNMO tự chạy.">Once it is running, use Install as a service in /control if the VPS supports it, then test a VPS restart to verify HNMO starts again.</span></li>
+      </ol>
+    </section>
+
+    <section id="https" class="guide-section" aria-labelledby="https-title">
+      <h2 id="https-title" data-vi="Ví dụ HTTPS cho server công khai">HTTPS example for a public server</h2>
+      <p data-vi="Trong Host settings của HNMO, điền tên miền thật vào Public address. Trong Plugins, để trống đường dẫn quản trị qua web để quản trị từ máy chủ hoặc SSH tunnel.">In HNMO’s Host settings, enter your domain in Public address. In Plugins, clear the website admin path to keep admin access on the host or through the SSH tunnel.</p>
+      <p><a href="https://caddyserver.com/download" data-vi="Tải Caddy">Download Caddy</a>. <span data-vi="Trên Ubuntu, có thể cài bằng sudo apt install caddy. Dùng Caddy trên máy chạy HNMO và thay play.example.com bằng tên miền của bạn.">On Ubuntu, you can install it with sudo apt install caddy. Run Caddy on the HNMO host and replace play.example.com with your domain.</span></p>
+      <pre><code>play.example.com {
+    @hostOnly path /control /control.html /control/* /api/control /api/control/*
+    respond @hostOnly 404
+    reverse_proxy 127.0.0.1:8080
+}</code></pre>
+      <p data-vi="Caddy chuyển tiếp WebSocket cho game và cấp chứng chỉ khi DNS và các cổng công khai đã sẵn sàng. Nếu dùng Caddy như dịch vụ trên Ubuntu, thêm khối trên vào /etc/caddy/Caddyfile, kiểm tra rồi nạp lại cấu hình.">Caddy forwards the game’s WebSocket connection and obtains a certificate when DNS and public ports are ready. If Caddy runs as a service on Ubuntu, add the block to /etc/caddy/Caddyfile, validate it, then reload the service.</p>
+      <pre><code>sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy</code></pre>
+      <p data-vi="Nếu chạy Caddy trực tiếp trên máy nhà, lưu cấu hình vào Caddyfile rồi dùng caddy run --config Caddyfile. Kiểm tra từ mạng khác rằng game chạy qua HTTPS và /control công khai trả 404.">If running Caddy directly at home, save the example into Caddyfile and run caddy run --config Caddyfile. From a separate network, verify that the game plays over HTTPS and the public /control path returns 404.</p>
+    </section>
+    <div class="actions guide-end">
+      <a class="button primary" href="/download" data-vi="Tải HNMO miễn phí">Download HNMO free</a>
+      <a class="button secondary" href="/#panel" data-vi="Xem bảng quản trị">Explore the admin panel</a>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="shell"><a class="wordmark" href="/">HNMO</a><a href="/#support" data-vi="Hỗ trợ">Support</a></div>
+  </footer>
+</body>
+</html>
