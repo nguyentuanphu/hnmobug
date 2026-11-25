@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Host a free 3D HNMO game server on Windows, macOS or Linux. Explore the game, try the built-in admin panel, and learn how to bring players together." data-vi-content="Tự mở server game 3D HNMO miễn phí trên Windows, macOS hoặc Linux. Khám phá gameplay, dùng thử bảng quản trị và xem cách mời người chơi.">
   <meta name="theme-color" content="#111411">
-  <title>HNMO — Start your own game server for free</title>
+  <title data-vi="HNMO — Tự mở server game miễn phí">HNMO — Start your own game server for free</title>
   <link rel="stylesheet" href="/showcase.css">
   <script src="/showcase.js" defer></script>
 </head>
@@ -77,6 +77,25 @@
           <img src="/images/hnmo-admin.webp" width="1200" height="660" loading="lazy" alt="The HNMO dashboard with season selection, server status, and player counts" data-vi-alt="Dashboard HNMO hiển thị các mùa, trạng thái server và số người chơi">
           <figcaption data-vi="Ảnh chụp bảng quản trị trên server mẫu">Admin dashboard on a demo server</figcaption>
         </figure>
+        <h3 class="tour-title" data-vi="Xem các màn hình quản trị thật">See the admin panel in use</h3>
+        <div class="admin-gallery">
+          <figure class="feature-shot">
+            <a href="/images/admin-servers.webp" aria-label="Enlarge the Servers screenshot" data-vi-label="Phóng to ảnh màn hình Servers"><img src="/images/admin-servers.webp" width="1150" height="680" loading="lazy" alt="Servers screen with a server list, controls, and the global message form" data-vi-alt="Màn hình Servers có danh sách server, nút điều khiển và ô gửi thông báo chung"></a>
+            <figcaption><strong data-vi="Theo dõi và vận hành từng server">Operate your servers</strong><span data-vi="Xem số người online, bật hoặc tắt từng server game và gửi thông báo cho một server hoặc toàn bộ cụm.">See who is online, start or stop each game server, and broadcast a message to one server or the whole group.</span></figcaption>
+          </figure>
+          <figure class="feature-shot">
+            <a href="/images/admin-players.webp" aria-label="Enlarge the Accounts screenshot" data-vi-label="Phóng to ảnh màn hình Accounts"><img src="/images/admin-players.webp" width="1150" height="680" loading="lazy" alt="Accounts screen with search, account states, and player management actions" data-vi-alt="Màn hình Accounts có ô tìm kiếm, trạng thái tài khoản và các thao tác quản lý người chơi"></a>
+            <figcaption><strong data-vi="Quản lý người chơi và hỗ trợ cộng đồng">Manage your players</strong><span data-vi="Tìm tài khoản để xem nhân vật, chỉnh trạng thái hoặc phân quyền quản trò. Dùng Online accounts để xem ai đang chơi.">Find an account to inspect characters, change its status, or assign a game master. Use Online accounts to see who is playing.</span></figcaption>
+          </figure>
+          <figure class="feature-shot">
+            <a href="/images/admin-drops.webp" aria-label="Enlarge the Item Drops screenshot" data-vi-label="Phóng to ảnh màn hình Item Drops"><img src="/images/admin-drops.webp" width="1150" height="680" loading="lazy" alt="Item Drops screen with a monster drop overview and drop groups" data-vi-alt="Màn hình Item Drops có bảng tỉ lệ rơi đồ theo quái và các nhóm vật phẩm rơi"></a>
+            <figcaption><strong data-vi="Tự cân bằng vật phẩm rơi">Tune your loot tables</strong><span data-vi="Xem tỉ lệ rơi theo từng quái, chỉnh nhóm vật phẩm theo bản đồ, nhiệm vụ hoặc sự kiện rồi lưu thay đổi.">Review drop chances per monster, adjust loot groups by map, quest, or event, and save the changes.</span></figcaption>
+          </figure>
+          <figure class="feature-shot">
+            <a href="/images/admin-events.webp" aria-label="Enlarge the Events screenshot" data-vi-label="Phóng to ảnh màn hình Events"><img src="/images/admin-events.webp" width="1150" height="680" loading="lazy" alt="Season 6 events screen with schedule, player requirements, and rewards" data-vi-alt="Màn hình sự kiện Season 6 có lịch chạy, điều kiện tham gia và phần thưởng"></a>
+            <figcaption><strong data-vi="Tự lên lịch và đặt thưởng sự kiện">Schedule and reward events</strong><span data-vi="Với Last Man Standing của Season 6, đặt giờ chạy, số người tối thiểu, cấp yêu cầu và phần thưởng ngay trong bảng quản trị.">For Season 6 Last Man Standing, set start times, minimum players, entry level, and rewards in the panel.</span></figcaption>
+          </figure>
+        </div>
         <h3 class="tour-title" data-vi="Thử các tác vụ quản trị">Try the admin tools</h3>
         <div class="panel-tour">
           <div class="tour-options" role="group" aria-label="Admin panel" data-vi-label="Bảng quản trị">
@@ -158,7 +177,7 @@
       <p class="section-lead" data-vi="Một gói tải có game chạy trên trình duyệt, server và bảng quản trị cho cả ba hệ điều hành. Bắt đầu miễn phí với tối đa 10 người chơi cùng lúc.">One download includes the browser game, server, and admin panel for all three host platforms. Start free with up to 10 players online at once.</p>
       <div class="actions download-actions">
         <a class="button primary" href="/download" data-vi="Tải HNMO miễn phí">Download HNMO free</a>
-        <span class="download-formats">Windows · macOS · Linux</span>
+        <a class="button secondary" href="/setup.html#local" data-vi="Xem hướng dẫn từng bước">Read the step-by-step guide</a>
       </div>
       <div class="platform-guides">
         <details open>
@@ -203,26 +222,22 @@
         <article>
           <h3 data-vi="Ở nhà hoặc tiệm net">Home or gaming café</h3>
           <p data-vi="Chạy HNMO trên một máy trong mạng nội bộ. Khách hoặc bạn bè dùng trình duyệt trên các máy cùng mạng để vào game.">Run HNMO on one computer. Guests on the same network join through their browsers.</p>
-          <details>
-            <summary data-vi="Cách kết nối trong mạng nội bộ">Join over the local network</summary>
-            <p data-vi="Tìm địa chỉ IPv4 nội bộ của máy chủ, ví dụ 192.168.1.20. Trên máy khác cùng mạng, mở http://192.168.1.20:8080 và dùng địa chỉ của máy chủ bạn.">Find the host computer’s local IPv4 address, for example 192.168.1.20. On another computer on the same network, open http://192.168.1.20:8080 using your host’s address.</p>
-          </details>
+          <a href="/setup.html#local" data-vi="Cài trên máy và chơi qua LAN">Set up and play over LAN</a>
         </article>
         <article>
-          <h3 data-vi="Chơi online với bạn bè">Private play online</h3>
-          <p data-vi="Mời bạn bè từ xa vào mạng riêng của nhóm. Khi đã kết nối, họ vào game bằng trình duyệt qua địa chỉ riêng của máy chủ.">Invite remote friends into your private network. Once connected, they use the host’s private address to play in their browsers.</p>
-          <details>
-            <summary data-vi="Cách mời bạn bè từ xa">Invite remote friends</summary>
-            <p data-vi="Kết nối máy chủ và người chơi vào cùng mạng riêng. Sau khi họ chấp nhận lời mời, gửi địa chỉ riêng của máy chủ và cổng 8080. Mở liên kết đó trong trình duyệt để vào game.">Connect the host and players to the same private network. Once friends accept the invite, share the host’s private address with port 8080 so they can open it in a browser.</p>
-          </details>
+          <h3 data-vi="Chơi với bạn bè qua Tailscale">Play with friends over Tailscale</h3>
+          <p data-vi="Chia sẻ máy chủ với từng người bạn. Khi đã kết nối mạng riêng, họ vào game bằng trình duyệt qua địa chỉ Tailscale của máy chủ.">Share your host with individual friends. Once they connect to the private network, they play in their browsers using the host’s Tailscale address.</p>
+          <a href="/setup.html#tailscale" data-vi="Xem ví dụ gửi lời mời và địa chỉ">Follow the invite example</a>
         </article>
         <article>
-          <h3 data-vi="Mở server công khai toàn cầu">Go public worldwide</h3>
-          <p data-vi="Dùng máy chủ có địa chỉ công khai và tên miền HTTPS để đón người chơi ở bất cứ đâu.">Use an internet-facing host and an HTTPS domain to welcome players from anywhere.</p>
-          <details>
-            <summary data-vi="Chuẩn bị trước khi mở công khai">Prepare a public server</summary>
-            <p data-vi="Khởi chạy HNMO và kiểm tra trên máy chủ trước. Trỏ tên miền về máy chủ, cấu hình reverse proxy HTTPS có hỗ trợ WebSocket cho trang game ở cổng 8080, rồi thử từ một mạng khác. Giữ bảng quản trị và cơ sở dữ liệu trong mạng riêng.">Start HNMO and test it locally. Point your domain to the host, configure an HTTPS reverse proxy with WebSocket support for the game site on port 8080, and test from another network. Keep the admin panel and database private.</p>
-          </details>
+          <h3 data-vi="Mở online tại nhà">Go public from home</h3>
+          <p data-vi="Dùng IP công khai và tên miền HTTPS để người chơi ở ngoài mạng nhà có thể vào game.">Use a public IP and HTTPS domain so players outside your home network can join.</p>
+          <a href="/setup.html#home" data-vi="Cấu hình router, tên miền và HTTPS">Set up your router, domain, and HTTPS</a>
+        </article>
+        <article>
+          <h3 data-vi="Mở server trên VPS">Host on a VPS</h3>
+          <p data-vi="Chạy HNMO trên Ubuntu, quản trị riêng qua SSH và gửi người chơi một địa chỉ HTTPS công khai.">Run HNMO on Ubuntu, manage it privately over SSH, and give players a public HTTPS address.</p>
+          <a href="/setup.html#vps" data-vi="Xem lệnh cài đặt trên VPS">See the VPS commands</a>
         </article>
       </div>
     </section>
