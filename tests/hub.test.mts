@@ -337,6 +337,7 @@ test('the newest release: set in the console, read by HNMO servers at /api/lates
   const signedIn = await consoleFn(post(`${base}/api/login`, { password: 'correct horse battery', code }, { 'X-Console': '1' }), ctx);
   const as = { 'X-Console': '1', cookie: signedIn.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ') };
   assert.equal((await latestFn(new Request('https://hub.example/api/latest'))).status, 404, 'none yet');
+  assert.equal((await latestFn(new Request('https://hub.example/download'))).status, 503, 'no archive when no release is published');
   assert.equal((await consoleFn(post(`${base}/api/latest`, { tag: '1.0.0', url: 'http://plain.example/HNMO.zip' }, as), ctx)).status, 400, 'https only');
   assert.equal((await consoleFn(post(`${base}/api/latest`, { tag: 'v1' }, as), ctx)).status, 400, 'a version like 1.0.0');
   process.env.UPDATES_URL = 'https://updates.example/';
@@ -351,6 +352,13 @@ test('the newest release: set in the console, read by HNMO servers at /api/lates
   assert.equal(latest.html_url, 'https://downloads.example/HNMO.zip');
   assert.equal(latest.body, 'Arena');
   assert.ok(latest.published_at);
+  for (const method of ['GET', 'HEAD']) {
+    const download = await latestFn(new Request('https://hub.example/download', { method }));
+    assert.equal(download.status, 302);
+    assert.equal(download.headers.get('location'), fromStorage.html_url, 'the website always uses release storage');
+  }
+  process.env.UPDATES_URL = 'https://github.com/example/releases';
+  assert.equal((await latestFn(new Request('https://hub.example/download'))).status, 503, 'no repository link for the website download');
   await consoleFn(post(`${base}/api/latest`, { tag: '' }, as), ctx);
   delete process.env.UPDATES_URL;
   assert.equal((await latestFn(new Request('https://hub.example/api/latest'))).status, 404, 'cleared');

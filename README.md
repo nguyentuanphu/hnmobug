@@ -4,6 +4,8 @@ The public site introduces HNMO to server hosts. The developer's console is on a
 (`/c/<CONSOLE_SLUG>/`) behind a password and, on a new or expired browser, a 6-digit code from an
 authenticator app. Every successful sign-in renews browser trust for 365 days. The session itself lasts 12 hours.
 
+The homepage's `/download` link serves the published `HNMO.zip` from the release storage configured in `UPDATES_URL`.
+
 What HNMO servers send (never player accounts, e-mails or passwords; an IP only in the first-setup report):
 - `POST /api/request`: a licence request (name, contact, players, note; a one-time secret only that server knows).
   `POST /api/licence`: the server asks for the answer with its secret and gets the licence the developer issued.

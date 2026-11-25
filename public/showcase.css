@@ -50,7 +50,23 @@ h3 { margin-bottom: .4rem; line-height: 1.3; }
 .secondary:hover { border-color: var(--gold); color: var(--gold); }
 .section { padding-block: clamp(3.5rem, 8vw, 6.5rem); }
 .section-lead { max-width: 42rem; margin-bottom: 1.4rem; }
-.section-lead, .hosting-options p, .support-layout p, .steps p { color: var(--muted); }
+.section-lead, .feature-list p, .hosting-options p, .support-layout p, .steps p { color: var(--muted); }
+.game-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(1.25rem, 4vw, 3.5rem); align-items: start; }
+.feature-shot { min-width: 0; margin: 0; }
+.feature-shot img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .55rem; }
+.feature-shot figcaption { margin-top: .55rem; color: var(--muted); font-size: .875rem; }
+.game-layout img { aspect-ratio: 1.45; object-fit: cover; }
+.feature-list article { border-top: 1px solid var(--line); padding-block: 1rem; }
+.feature-list article:last-child { border-bottom: 1px solid var(--line); }
+.feature-list p { margin-bottom: 0; }
+.panel-band { background: var(--panel); border-block: 1px solid var(--line); }
+.admin-shot { margin-block: 1.85rem 2.6rem; }
+.admin-example { margin-top: 2.75rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
+.admin-example img { aspect-ratio: auto; }
+.admin-example ol { margin: .8rem 0 0; padding-left: 1.25rem; color: var(--muted); }
+.admin-example li + li { margin-top: .55rem; }
+.admin-example li::marker { color: var(--gold); }
+.tour-title { margin-bottom: 1rem; font-size: 1.3rem; }
 .panel-tour { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); align-items: stretch; gap: 1.25rem; }
 .tour-options { display: grid; gap: .6rem; }
 .tour-options button { display: grid; gap: .25rem; text-align: start; color: var(--text); padding: .8rem 1rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--panel); cursor: pointer; }
@@ -76,19 +92,27 @@ h3 { margin-bottom: .4rem; line-height: 1.3; }
 .rate-controls .button { min-height: 2.75rem; padding: .35rem .65rem; cursor: pointer; }
 .status { color: var(--good); font-size: .875rem; text-align: end; }
 .tour-note { margin: .55rem 0 0; font-size: .875rem; }
-.product-screens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 2rem; }
-.product-screens figure { margin: 0; }
-.product-screens img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .55rem; }
-.product-screens figcaption { margin-top: .5rem; color: var(--muted); font-size: .875rem; }
-.setup-band { background: var(--panel); border-block: 1px solid var(--line); }
+.download-actions { margin-bottom: 1.9rem; }
+.download-formats { color: var(--muted); font-size: .9rem; }
+.platform-guides { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.platform-guides details { padding: 1.05rem; border: 1px solid var(--line); border-radius: .55rem; background: var(--panel); }
+.platform-guides summary { padding: .3rem 0; cursor: pointer; font-weight: 750; }
+.platform-guides summary::marker, .hosting-options summary::marker { color: var(--gold); }
+.platform-guides summary span { display: block; margin-left: 1rem; color: var(--muted); font-size: .875rem; font-weight: 500; }
+.platform-guides ol { margin: .8rem 0 0; padding-left: 1.25rem; }
+.platform-guides li + li { margin-top: .5rem; }
+.platform-guides code { overflow-wrap: anywhere; color: var(--gold); }
+.first-run { margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; padding: 0 0 0 1.4rem; margin: 2rem 0 1.5rem; }
+.first-run .steps { margin: 1rem 0 0; }
 .steps li { padding-inline-start: .35rem; }
 .steps li::marker { color: var(--gold); font-weight: 750; }
 .steps h3 { font-size: 1.1rem; }
-.text-link { font-weight: 700; }
 .hosting-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .hosting-options article { display: flex; flex-direction: column; align-items: start; padding: 1.2rem; border: 1px solid var(--line); border-radius: .55rem; background: var(--panel); }
-.hosting-options a { margin-top: auto; }
+.hosting-options details { width: 100%; margin-top: auto; border-top: 1px solid var(--line); }
+.hosting-options details p { margin: 0; overflow-wrap: anywhere; }
+.hosting-options summary { padding-block: .7rem; cursor: pointer; font-weight: 650; }
 .support-band { border-top: 1px solid var(--line); padding-block: clamp(2rem, 5vw, 3.5rem); }
 .support-layout { display: grid; grid-template-columns: minmax(0, .6fr) minmax(0, 1fr); align-items: start; gap: 1.4rem; }
 .support-layout h2 { margin-bottom: .55rem; font: 700 1.2rem/1.3 system-ui, sans-serif; letter-spacing: 0; }
@@ -111,6 +135,6 @@ h3 { margin-bottom: .4rem; line-height: 1.3; }
   .hero::before { background-position: 62% center; }
   .hero::after { background: linear-gradient(90deg, rgb(17 20 17 / .94), rgb(17 20 17 / .40)), linear-gradient(0deg, #111411, transparent 70%); }
   .hero-inner { padding-block: 3.3rem; }
-  .panel-tour, .product-screens, .steps, .hosting-options, .support-layout { grid-template-columns: minmax(0, 1fr); }
+  .game-layout, .panel-tour, .platform-guides, .steps, .hosting-options, .support-layout { grid-template-columns: minmax(0, 1fr); }
   .steps { gap: .65rem; }
 }
