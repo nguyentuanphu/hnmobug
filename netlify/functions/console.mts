@@ -1,7 +1,7 @@
-// The developer's console, on a hidden path: /c/<CONSOLE_SLUG>/ (any other /c/… path is a plain "not found" page of
-// the cover site). Sign-in: the password always; on a browser not yet trusted also the authenticator code, after which
-// the browser is trusted for 30 days. The first visit sets the password (with the hub key as proof) and makes the
-// authenticator key. API under /c/<slug>/api/: status, setup, login, logout, state, make-key, issue, decline, revoke,
+// The developer's console is on /c/<CONSOLE_SLUG>/. Any other /c/… path shows the public 404 page.
+// Sign-in always requires the password. An untrusted browser also needs an authenticator code. Every successful sign-in
+// starts a new trust period. The first visit uses the hub key to set the password and create the authenticator key.
+// API under /c/<slug>/api/: status, setup, login, logout, state, make-key, issue, decline, revoke,
 // forget-device, mark (a test machine or a real host), latest (the newest release HNMO servers are told about). Every change needs the session cookie and the X-Console header (no cross-site requests).
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
@@ -86,12 +86,15 @@ export default async (req: Request, context: { ip?: string }) => {
       const now = new Date().toISOString();
       const record: Device = { id: device, name: cleanText(req.headers.get('user-agent'), 160) || 'browser', added: now, lastSeen: now };
       await store.setJSON(`devices/${device}`, record);
-      headers.append('Set-Cookie', cookie('hnmo_device', sign({ exp: Date.now() + TRUST_DAYS * 86400_000, d: device }), base, TRUST_DAYS * 86400));
     } else {
       const record = (await store.get(`devices/${device}`, { type: 'json' })) as Device | null;
       if (record) await store.setJSON(`devices/${device}`, { ...record, lastSeen: new Date().toISOString() });
     }
-    headers.append('Set-Cookie', cookie('hnmo_session', sign({ exp: Date.now() + SESSION_HOURS * 3600_000, d: device }), base, SESSION_HOURS * 3600));
+    const now = Date.now();
+    const trustSeconds = TRUST_DAYS * 86400;
+    const sessionSeconds = SESSION_HOURS * 3600;
+    headers.append('Set-Cookie', cookie('hnmo_device', sign({ exp: now + trustSeconds * 1000, d: device }), base, trustSeconds));
+    headers.append('Set-Cookie', cookie('hnmo_session', sign({ exp: now + sessionSeconds * 1000, d: device }), base, sessionSeconds));
     return new Response(JSON.stringify({ ok: true }), { headers });
   }
 

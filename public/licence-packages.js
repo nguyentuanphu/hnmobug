@@ -1,6 +1,7 @@
 const copy = {
   en: {
     title: 'Licence packages',
+    signIn: 'Sign in',
     mode: 'Checkout is in test mode. No real payment or licence is issued by checkout.',
     empty: 'No packages are available.',
     returned: 'Check your test order with the owner. Returning here does not confirm payment.',
@@ -10,6 +11,7 @@ const copy = {
   },
   vi: {
     title: 'Gói giấy phép',
+    signIn: 'Đăng nhập',
     mode: 'Trang thanh toán đang ở chế độ thử nghiệm. Trang này không thu tiền thật hay cấp giấy phép.',
     empty: 'Chưa có gói giấy phép.',
     returned: 'Kiểm tra đơn thử nghiệm với chủ hệ thống. Việc quay lại đây chưa xác nhận thanh toán.',
@@ -26,6 +28,10 @@ const query = new URLSearchParams(location.search);
 const result = query.get('checkout');
 const reference = query.get('order') ?? '';
 let lang = navigator.language.toLowerCase().startsWith('vi') ? 'vi' : 'en';
+try {
+  const saved = localStorage.getItem('hnmo-site-language');
+  if (saved === 'en' || saved === 'vi') lang = saved;
+} catch {}
 let catalogue = null;
 let failure = false;
 
@@ -51,6 +57,8 @@ async function startCheckout(item, button) {
 function render() {
   const strings = copy[lang];
   document.documentElement.lang = lang;
+  document.title = strings.title + ' · HNMO';
+  document.querySelector('#sign-in').textContent = strings.signIn;
   document.querySelector('#title').textContent = strings.title;
   document.querySelector('#mode').textContent = strings.mode;
   language.lang = lang === 'en' ? 'vi' : 'en';
@@ -73,6 +81,7 @@ function render() {
     if (catalogue.testCheckout) {
       const button = document.createElement('button');
       button.type = 'button';
+      button.className = 'button primary';
       button.textContent = strings.checkout;
       button.addEventListener('click', () => startCheckout(item, button));
       card.append(button);
@@ -81,8 +90,10 @@ function render() {
   }
 }
 
+language.hidden = false;
 language.addEventListener('click', () => {
   lang = lang === 'vi' ? 'en' : 'vi';
+  try { localStorage.setItem('hnmo-site-language', lang); } catch {}
   render();
 });
 render();

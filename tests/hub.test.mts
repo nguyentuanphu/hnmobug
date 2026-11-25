@@ -81,7 +81,7 @@ test('the console: password, then the code on a new browser; issuing a licence a
   const store = memoryStore();
   useStoreForTests(store);
   const base = `/c/${process.env.CONSOLE_SLUG}`;
-  assert.equal((await consoleFn(new Request('https://hub.example/c/other/'), ctx)).status, 404, 'another path is the cover site');
+  assert.equal((await consoleFn(new Request('https://hub.example/c/other/'), ctx)).status, 404, 'another path shows the public 404 page');
   assert.equal((await consoleFn(new Request(`https://hub.example${base}/`), ctx)).status, 200);
   assert.equal((await consoleFn(new Request(`https://hub.example${base}/api/state`), ctx)).status, 401);
   const h = { 'X-Console': '1' };
@@ -133,6 +133,46 @@ test('the console: password, then the code on a new browser; issuing a licence a
   await consoleFn(post(`${base}/api/forget-device`, { device: devices[0].id }, as), ctx);
   assert.equal((await consoleFn(new Request(`https://hub.example${base}/api/state`, { headers: { cookie: jar } }), ctx)).status, 401);
   useStoreForTests(null);
+});
+
+test('browser trust lasts 365 days from each successful sign-in', async (context) => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  context.after(() => useStoreForTests(null));
+  const day = 86400_000;
+  const start = Date.now();
+  let now = start;
+  context.mock.method(Date, 'now', () => now);
+  const base = `/c/${process.env.CONSOLE_SLUG}`;
+  const login = (password: string, device?: string, code?: string) =>
+    consoleFn(post(`${base}/api/login`, { password, code }, { 'X-Console': '1', cookie: device ?? '' }), ctx);
+  const password = 'correct horse battery';
+  const code = totpCode(process.env.CONSOLE_TOTP_SECRET!, Math.floor(start / 30_000));
+  const first = await login(password, undefined, code);
+  assert.deepEqual(await first.json(), { ok: true });
+  const [deviceCookie, sessionCookie] = first.headers.getSetCookie();
+  assert.match(deviceCookie, /Max-Age=31536000; HttpOnly; Secure; SameSite=Strict/);
+  assert.match(sessionCookie, /Max-Age=43200; HttpOnly; Secure; SameSite=Strict/);
+  const device = unsign<{ exp: number; d: string }>(deviceCookie.split(';')[0].split('=')[1])!;
+  assert.equal(device.exp, start + 365 * day);
+
+  const returning = start + 20 * day;
+  now = returning;
+  const oldCookie = `hnmo_device=${sign({ d: device.d, exp: start + 30 * day })}`;
+  const wrong = await login('wrong', oldCookie);
+  assert.equal(wrong.status, 401);
+  assert.deepEqual(wrong.headers.getSetCookie(), []);
+  const renewed = await login(password, oldCookie);
+  assert.deepEqual(await renewed.json(), { ok: true });
+  const [renewedCookie] = renewed.headers.getSetCookie();
+  assert.match(renewedCookie, /Max-Age=31536000;/);
+  assert.deepEqual(unsign(renewedCookie.split(';')[0].split('=')[1]), { exp: returning + 365 * day, d: device.d });
+  assert.equal([...store.data.keys()].filter((key) => key.startsWith('devices/')).length, 1);
+
+  now = returning + 365 * day + 1;
+  const expired = await login(password, renewedCookie.split(';')[0]);
+  assert.deepEqual(await expired.json(), { needCode: true });
+  assert.deepEqual(expired.headers.getSetCookie(), []);
 });
 
 test('first use: the hub key proves it is the developer; the password and authenticator key are set once', async () => {
