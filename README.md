@@ -1,8 +1,8 @@
 # HNMO hub (private)
 
-The HNMO developer's console and the address HNMO servers send to. The site's front is a plain notes blog; the
-console is on a hidden path (`/c/<CONSOLE_SLUG>/`) behind a password and, on a new browser, a 6-digit code from an
-authenticator app (the browser is then trusted for 30 days).
+The public site introduces HNMO to server hosts. The developer's console is on a private path
+(`/c/<CONSOLE_SLUG>/`) behind a password and, on a new or expired browser, a 6-digit code from an
+authenticator app. Every successful sign-in renews browser trust for 365 days. The session itself lasts 12 hours.
 
 What HNMO servers send (never player accounts, e-mails or passwords; an IP only in the first-setup report):
 - `POST /api/request`: a licence request (name, contact, players, note; a one-time secret only that server knows).

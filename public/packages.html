@@ -3,21 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Licence packages • HNMO</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta name="theme-color" content="#111411">
+  <title>Licence packages · HNMO</title>
+  <link rel="stylesheet" href="/showcase.css">
   <script src="/licence-packages.js" defer></script>
 </head>
 <body>
-<div class="wrap">
-  <header class="site"><a href="/">HNMO</a></header>
-  <main>
-    <button id="language" type="button" lang="vi">Tiếng Việt</button>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="wordmark" href="/" aria-label="HNMO"><span aria-hidden="true">H</span> HNMO</a>
+      <div class="header-actions">
+        <button id="language" type="button" lang="vi" hidden>Tiếng Việt</button>
+        <a href="/login" id="sign-in">Sign in</a>
+      </div>
+    </div>
+  </header>
+  <main class="shell section">
     <h1 id="title">Licence packages</h1>
-    <p id="mode">Checkout is in test mode. No real payment or licence is issued by checkout.</p>
+    <p id="mode" class="package-notice">Checkout is in test mode. No real payment or licence is issued by checkout.</p>
     <p id="status" role="status"></p>
-    <div id="packages"></div>
+    <div id="packages" class="package-grid"></div>
   </main>
-  <footer>Powered by HNMO, made by HenryN</footer>
-</div>
 </body>
 </html>
