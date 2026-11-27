@@ -357,6 +357,11 @@ test('the newest release: set in the console, read by HNMO servers at /api/lates
     assert.equal(download.status, 302);
     assert.equal(download.headers.get('location'), fromStorage.html_url, 'the website always uses release storage');
   }
+  for (const [os, file] of [['macos', 'HNMO-macos.zip'], ['linux', 'HNMO-linux.deb'], ['windows', 'HNMO.zip'], ['nonsense', 'HNMO.zip']]) {
+    const perSystem = await latestFn(new Request(`https://hub.example/download?os=${os}`));
+    assert.equal(perSystem.status, 302);
+    assert.equal(perSystem.headers.get('location'), `https://updates.example/releases/1.2.0/${file}`, `?os=${os}`);
+  }
   process.env.UPDATES_URL = 'https://github.com/example/releases';
   assert.equal((await latestFn(new Request('https://hub.example/download'))).status, 503, 'no repository link for the website download');
   await consoleFn(post(`${base}/api/latest`, { tag: '' }, as), ctx);
