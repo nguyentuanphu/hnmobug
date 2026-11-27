@@ -112,28 +112,22 @@ test('GET /api/update-file requires dedicated UPDATE_TOKEN_SECRET and enforces t
     licenceId, machineId: MACHINE, legacyMachineId: LEGACY, buildStamp: 'HNMO-b1', licence: Buffer.from(file).toString('base64'),
   }), ctx);
   const { token } = await checkRes.json() as { token: string };
-  const fakeFetch: typeof fetch = async (input) => {
-    assert.equal(String(input), `https://cdn.example/hnmo/files/${'c'.repeat(64)}`);
-    return new Response('binary-ok', { status: 200 });
-  };
-
-  // Authorized stream succeeds
+  // Authorized: redirected to the file on the update storage (Cloudflare), not streamed through the hub
   const okFile = await handleUpdateFile(
     new Request(`https://hub.example/api/update-file?path=server/HNMO.Startup.dll&token=${encodeURIComponent(token)}`, {
       headers: { 'x-hnmo-machine': MACHINE },
     }),
     ctx,
-    fakeFetch,
   );
-  assert.equal(okFile.status, 200);
-  assert.equal(await okFile.text(), 'binary-ok');
+  assert.equal(okFile.status, 302);
+  assert.equal(okFile.headers.get('location'), `https://cdn.example/hnmo/files/${'c'.repeat(64)}`);
+  assert.equal(okFile.headers.get('x-hnmo-sha256'), 'c'.repeat(64));
 
   // Expired token refused
   const expiredToken = signUpdateToken({ licenceId, machineId: MACHINE, buildStamp: 'HNMO-b1', version: '1.2.3', exp: Date.now() - 1000 });
   const expiredRes = await handleUpdateFile(
     new Request(`https://hub.example/api/update-file?path=server/HNMO.Startup.dll&token=${encodeURIComponent(expiredToken)}`),
     ctx,
-    fakeFetch,
   );
   assert.equal(expiredRes.status, 403);
 
@@ -141,7 +135,6 @@ test('GET /api/update-file requires dedicated UPDATE_TOKEN_SECRET and enforces t
   const otherMachineRes = await handleUpdateFile(
     new Request(`https://hub.example/api/update-file?path=server/HNMO.Startup.dll&token=${encodeURIComponent(token)}&machine=deadbeefdeadbeef`),
     ctx,
-    fakeFetch,
   );
   assert.equal(otherMachineRes.status, 403);
 
@@ -151,7 +144,6 @@ test('GET /api/update-file requires dedicated UPDATE_TOKEN_SECRET and enforces t
       headers: { 'x-hnmo-machine': MACHINE },
     }),
     ctx,
-    fakeFetch,
   );
   assert.equal(offManifestRes.status, 403);
 
@@ -162,7 +154,6 @@ test('GET /api/update-file requires dedicated UPDATE_TOKEN_SECRET and enforces t
       headers: { 'x-hnmo-machine': MACHINE },
     }),
     ctx,
-    fakeFetch,
   );
   assert.equal(withdrawnRes.status, 403);
 });
@@ -224,13 +215,11 @@ test('POST /api/update-check: a server without a licence updates as a free host;
   assert.ok(store.data.has(`update-checks/free/${MACHINE}`));
 
   // The free host's token downloads files of the manifest only.
-  const fetched: string[] = [];
-  const upstream = (async (url: string | URL | Request) => { fetched.push(String(url)); return new Response('x'); }) as typeof fetch;
   process.env.UPDATES_URL = 'https://cdn.example/hnmo';
   t.after(() => { delete process.env.UPDATES_URL; });
-  const ok = await handleUpdateFile(new Request(`https://hub.example/api/update-file?path=server/HNMO.Startup.dll&token=${body.token}`), {}, upstream);
-  assert.equal(ok.status, 200);
-  const off = await handleUpdateFile(new Request(`https://hub.example/api/update-file?path=server/other.dll&token=${body.token}`), {}, upstream);
+  const ok = await handleUpdateFile(new Request(`https://hub.example/api/update-file?path=server/HNMO.Startup.dll&token=${body.token}`), {});
+  assert.equal(ok.status, 302);
+  const off = await handleUpdateFile(new Request(`https://hub.example/api/update-file?path=server/other.dll&token=${body.token}`), {});
   assert.equal(off.status, 403);
 
   // Still needs a machine id.
