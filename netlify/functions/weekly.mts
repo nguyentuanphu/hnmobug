@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { checkLicence } from '../lib/license.mts';
 import { cleanMachine, cleanWeekly, WEEKLY_MIN_DAYS, type Stored } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteLicenceUse, withdrawIfShared, type HostRecord, type LicenceRecord } from '../lib/hub.mts';
+import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, noteLicenceUse, withdrawIfShared, type HostRecord, type LicenceRecord } from '../lib/hub.mts';
 
 const DAY = 24 * 3600 * 1000;
 
@@ -40,12 +40,22 @@ export default async (req: Request, context: { ip?: string }) => {
     return json({ error: 'too soon', next }, 429);
   }
   // Many servers behind one connection are fine; a flood from one is not.
-  if (!(await countOnce(store, `limits/${today}/weekly/ip-${ipHash(clientIp(req, context))}`, 50))) return json({ error: 'limit' }, 429);
+  const ip = clientIp(req, context);
+  if (!(await countOnce(store, `limits/${today}/weekly/ip-${ipHash(ip)}`, 50))) return json({ error: 'limit' }, 429);
 
   const licence = checkLicence(body.licence ?? null, today, await licenceKeys(store));
   const issued = licence.valid && licence.id ? (await store.get(`licences/${licence.id}`, { type: 'json' })) as LicenceRecord | null : null;
   const computers = issued ? await noteLicenceUse(store, issued.id, machine, legacy && legacy !== machine ? legacy : null, now) : [];
   const revoked = issued ? await withdrawIfShared(store, issued, computers, now) : false;
+  if (licence.valid && licence.id) {
+    await noteCloneSighting(store, licence.id, {
+      machine,
+      legacyMachine: legacy,
+      fingerprint: body.fingerprint,
+      os: weekly.os,
+      ip,
+    }, now);
+  }
   const { bugs, ...latest } = weekly;
   const record: HostRecord = {
     machine,

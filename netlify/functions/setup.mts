@@ -5,7 +5,7 @@
 import { checkLicence } from '../lib/license.mts';
 import { cleanMachine, cleanSetup, SETUPS_PER_DAY } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { clientIp, countOnce, hub, ipHash, json, licenceKeys, type SetupRecord } from '../lib/hub.mts';
+import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, type SetupRecord } from '../lib/hub.mts';
 
 interface Geo { country?: { code?: string; name?: string } }
 
@@ -47,6 +47,19 @@ export default async (req: Request, context: { ip?: string; geo?: Geo }) => {
     ...setup,
   };
   await store.setJSON(`setups/${machine}`, record);
+  if (licence.valid && licence.id) {
+    await noteCloneSighting(store, licence.id, {
+      machine,
+      legacyMachine: legacy,
+      fingerprint: body.fingerprint,
+      os: setup.system.os,
+      arch: setup.system.arch,
+      cpu: setup.system.cpu,
+      cores: setup.system.cores,
+      ramGb: setup.system.ramGb,
+      ip,
+    }, new Date());
+  }
   return json({ ok: true });
 };
 
