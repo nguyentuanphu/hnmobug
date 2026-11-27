@@ -1,5 +1,7 @@
 // POST /api/update-check: checks a server's licence before issuing update metadata and a short-lived download token.
-// Stores only { licenceId, machineId, buildStamp, lastSeen } — zero player data.
+// A server without a licence file gets the update as a free host (owner, 2026-11-27: the free 10-player build updates
+// itself too; the player limit is the server's own business). A licence that is sent must be valid, bound to this
+// machine and not withdrawn. Stores only { licenceId, machineId, buildStamp, lastSeen } — zero player data.
 import { checkLicence } from '../lib/license.mts';
 import { cleanMachine } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
@@ -7,7 +9,49 @@ import { clientIp, countOnce, hub, ipHash, json, licenceKeys, signUpdateToken, t
 import { isLicenceWithdrawn, resolveManifestFiles } from '../lib/updates.mts';
 import type { LatestRelease } from './latest.mts';
 
+/** The licence id of a server without a licence file (the free build). */
+export const FREE_HOST = 'free';
+
 const cleanStamp = (value: unknown): string => (typeof value === 'string' ? value.replace(/\u0000/g, '').trim().slice(0, 80) : '');
+
+/** Checks a licence a server sent: signed by the hub, this machine's, not withdrawn. Returns its id or the refusal. */
+async function checkSentLicence(
+  store: ReturnType<typeof hub>,
+  licenceB64: string,
+  requestedLicenceId: string,
+  machineId: string,
+  legacyMachineId: string,
+  today: string,
+): Promise<string | Response> {
+  let decodedLicence: string;
+  try {
+    decodedLicence = Buffer.from(licenceB64, 'base64').toString('utf8');
+  } catch {
+    return json({ error: 'forbidden', reason: 'broken' }, 403);
+  }
+
+  const parsed = checkLicence(decodedLicence, today, await licenceKeys(store));
+  if (!parsed.valid) {
+    return json({ error: 'forbidden', reason: parsed.reason }, 403);
+  }
+
+  const id = parsed.id ?? requestedLicenceId;
+  if (!id || id === FREE_HOST || (requestedLicenceId && parsed.id && requestedLicenceId !== parsed.id)) {
+    return json({ error: 'forbidden', reason: 'licence_id' }, 403);
+  }
+
+  if (parsed.machine) {
+    const bound = parsed.machine.toLowerCase();
+    if (bound !== machineId && bound !== legacyMachineId) {
+      return json({ error: 'forbidden', reason: 'machine' }, 403);
+    }
+  }
+
+  if (await isLicenceWithdrawn(store, id)) {
+    return json({ error: 'forbidden', reason: 'withdrawn' }, 403);
+  }
+  return id;
+}
 
 export default async (req: Request, context: { ip?: string }) => {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
@@ -34,37 +78,14 @@ export default async (req: Request, context: { ip?: string }) => {
   const requestedLicenceId = typeof body.licenceId === 'string' ? body.licenceId.trim().slice(0, 64) : '';
   const licenceB64 = typeof body.licence === 'string' ? body.licence.trim() : '';
 
-  if (!machineId || !licenceB64 || licenceB64.length > 16_384) {
+  if (!machineId || licenceB64.length > 16_384) {
     return json({ error: 'forbidden', reason: 'invalid_request' }, 403);
   }
 
-  let decodedLicence: string;
-  try {
-    decodedLicence = Buffer.from(licenceB64, 'base64').toString('utf8');
-  } catch {
-    return json({ error: 'forbidden', reason: 'broken' }, 403);
-  }
-
-  const parsed = checkLicence(decodedLicence, today, await licenceKeys(store));
-  if (!parsed.valid) {
-    return json({ error: 'forbidden', reason: parsed.reason }, 403);
-  }
-
-  const licenceId = parsed.id ?? requestedLicenceId;
-  if (!licenceId || (requestedLicenceId && parsed.id && requestedLicenceId !== parsed.id)) {
-    return json({ error: 'forbidden', reason: 'licence_id' }, 403);
-  }
-
-  if (parsed.machine) {
-    const bound = parsed.machine.toLowerCase();
-    if (bound !== machineId && bound !== (legacyMachineId ?? '')) {
-      return json({ error: 'forbidden', reason: 'machine' }, 403);
-    }
-  }
-
-  if (await isLicenceWithdrawn(store, licenceId)) {
-    return json({ error: 'forbidden', reason: 'withdrawn' }, 403);
-  }
+  const licenceId = licenceB64
+    ? await checkSentLicence(store, licenceB64, requestedLicenceId, machineId, legacyMachineId ?? '', today)
+    : FREE_HOST;
+  if (licenceId instanceof Response) return licenceId;
 
   const record: UpdateCheckRecord = {
     licenceId,

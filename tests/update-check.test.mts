@@ -201,3 +201,50 @@ test('POST /api/update-check matches legacyMachineId and accepts 403 rejections 
   assert.equal(revokedRes.status, 403);
   assert.equal((await updateCheckFn(post(null, 'GET'), ctx)).status, 405);
 });
+
+test('POST /api/update-check: a server without a licence updates as a free host; a broken or withdrawn licence does not', async (t) => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  t.after(() => useStoreForTests(null));
+
+  const key = makeLicenceKey();
+  await store.setJSON('keys/licence', key);
+  await store.setJSON('config/latest', { tag: '1.0.1', url: '', notes: '', published: '2026-11-27T09:00:00Z' });
+  await store.setJSON('releases/1.0.1/manifest', { version: '1.0.1', files: [{ path: 'server/HNMO.Startup.dll', sha256: 'b'.repeat(64) }] });
+
+  // No licence file: the free build still gets the update, recorded under "free".
+  const free = await updateCheckFn(post({ machineId: MACHINE, buildStamp: 'HNMO-free' }), ctx);
+  assert.equal(free.status, 200);
+  const body = await free.json() as { manifestVersion: string; token: string; files: unknown[] };
+  assert.equal(body.manifestVersion, '1.0.1');
+  assert.equal(body.files.length, 1);
+  const claims = verifyUpdateToken<{ licenceId: string; machineId: string; exp: number }>(body.token);
+  assert.equal(claims?.licenceId, 'free');
+  assert.equal(claims?.machineId, MACHINE);
+  assert.ok(store.data.has(`update-checks/free/${MACHINE}`));
+
+  // The free host's token downloads files of the manifest only.
+  const fetched: string[] = [];
+  const upstream = (async (url: string | URL | Request) => { fetched.push(String(url)); return new Response('x'); }) as typeof fetch;
+  process.env.UPDATES_URL = 'https://cdn.example/hnmo';
+  t.after(() => { delete process.env.UPDATES_URL; });
+  const ok = await handleUpdateFile(new Request(`https://hub.example/api/update-file?path=server/HNMO.Startup.dll&token=${body.token}`), {}, upstream);
+  assert.equal(ok.status, 200);
+  const off = await handleUpdateFile(new Request(`https://hub.example/api/update-file?path=server/other.dll&token=${body.token}`), {}, upstream);
+  assert.equal(off.status, 403);
+
+  // Still needs a machine id.
+  assert.equal((await updateCheckFn(post({ buildStamp: 'HNMO-free' }), ctx)).status, 403);
+
+  // A licence that is sent must be valid: garbage is refused, not treated as "free".
+  const broken = await updateCheckFn(post({ machineId: MACHINE, licence: Buffer.from('not a licence').toString('base64') }), ctx);
+  assert.equal(broken.status, 403);
+
+  // A withdrawn licence is refused, and a licence can't claim the "free" id.
+  const licenceId = 'L-2026-11-27-bbbbbb';
+  const file = signLicence({ licensee: 'Lan', maxPlayers: 30, expires: '2028-01-01', machine: MACHINE, issued: '2026-11-27T00:00:00Z', id: licenceId }, privatePem(key));
+  await store.setJSON(`licences/${licenceId}`, { id: licenceId, licensee: 'Lan', maxPlayers: 30, expires: '2028-01-01', machine: MACHINE, issued: '2026-11-27T00:00:00Z', requestId: null, revoked: '2026-11-27T08:00:00Z', file });
+  const withdrawn = await updateCheckFn(post({ machineId: MACHINE, licence: Buffer.from(file).toString('base64') }), ctx);
+  assert.equal(withdrawn.status, 403);
+  assert.equal(((await withdrawn.json()) as { reason: string }).reason, 'withdrawn');
+});
