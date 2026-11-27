@@ -8,8 +8,12 @@ export interface LatestRelease { tag: string; url: string; notes: string; publis
 
 const updatesUrl = (): string => (process.env.UPDATES_URL || '').trim().replace(/\/+$/, '');
 
+/** /download?os=…: the folder for every system (HNMO.zip, the default), the macOS app or the Debian/Ubuntu package. */
+const ARCHIVES: Record<string, string> = { windows: 'HNMO.zip', all: 'HNMO.zip', macos: 'HNMO-macos.zip', mac: 'HNMO-macos.zip', linux: 'HNMO-linux.deb', deb: 'HNMO-linux.deb' };
+
 export default async (req: Request) => {
-  const download = new URL(req.url).pathname === '/download';
+  const url = new URL(req.url);
+  const download = url.pathname === '/download';
   if (req.method !== 'GET' && !(download && req.method === 'HEAD')) return json({ error: 'GET only' }, 405);
   const latest = (await hub().get('config/latest', { type: 'json' })) as LatestRelease | null;
   const base = updatesUrl();
@@ -17,7 +21,8 @@ export default async (req: Request) => {
     const storage = URL.canParse(base) ? new URL(base) : null;
     if (latest?.tag && storage?.protocol === 'https:' && !storage.username && !storage.password &&
         !storage.search && !storage.hash && !/(^|\.)(github\.com|githubusercontent\.com|github\.io)$/i.test(storage.hostname)) {
-      const archive = `${base}/releases/${encodeURIComponent(latest.tag)}/HNMO.zip`;
+      const file = ARCHIVES[(url.searchParams.get('os') || '').toLowerCase()] ?? 'HNMO.zip';
+      const archive = `${base}/releases/${encodeURIComponent(latest.tag)}/${file}`;
       return new Response(null, { status: 302, headers: { Location: archive, 'Cache-Control': 'no-store' } });
     }
     return new Response(req.method === 'HEAD' ? null : 'Tệp tải xuống tạm thời chưa có. Vui lòng thử lại sau.\nThe download is temporarily unavailable. Please try again later.', {
