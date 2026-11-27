@@ -24,8 +24,9 @@ export function buildKey(): string {
       join(process.cwd(), 'netlify', 'lib', 'hnmo-pub.pem'),
     ];
     const found = candidates.find((path) => existsSync(path));
-    if (!process.env.HNMO_PUBLIC_KEY && !found) throw new Error('hnmo-pub.pem not found');
-    buildKeyPem = process.env.HNMO_PUBLIC_KEY || readFileSync(found!, 'utf8');
+    const envPem = (process.env.HNMO_PUBLIC_KEY || process.env.HNMO_UPDATE_PUBLIC_KEY || '').trim();
+    if (!envPem && !found) throw new Error('hnmo-pub.pem not found');
+    buildKeyPem = envPem || readFileSync(found!, 'utf8');
   }
   return buildKeyPem;
 }
