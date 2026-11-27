@@ -189,3 +189,123 @@ export const json = (body: unknown, status = 200, headers: Record<string, string
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...headers } });
 
 export const clientIp = (req: Request, context: { ip?: string }): string => context.ip || req.headers.get('x-nf-client-connection-ip') || '';
+
+export interface CloneSighting {
+  fingerprint: string;
+  machine: string;
+  legacyMachine: string | null;
+  ipHash: string;
+  netHash: string;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+export interface CloneRecord {
+  licenceId: string;
+  firstRun: CloneSighting;
+  sightings: CloneSighting[];
+  flagged: boolean;
+  flaggedAt: string | null;
+  reason: string | null;
+}
+
+export const ipPrefix = (ip: string): string => {
+  const clean = ip.trim();
+  const v4 = /^(\d+\.\d+\.\d+)\.\d+$/.exec(clean);
+  if (v4) return v4[1];
+  if (clean.includes(':')) return clean.split(':').slice(0, 4).join(':');
+  return clean;
+};
+
+export const buildFingerprint = (info: {
+  machine: string;
+  legacyMachine?: string | null;
+  fingerprint?: unknown;
+  os?: string;
+  arch?: string;
+  cpu?: string;
+  cores?: number;
+  ramGb?: number;
+}): string => {
+  if (typeof info.fingerprint === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(info.fingerprint.trim())) {
+    return info.fingerprint.trim();
+  }
+  const canonical = JSON.stringify({
+    machine: info.machine,
+    os: (info.os ?? '').trim().toLowerCase(),
+    arch: (info.arch ?? '').trim().toLowerCase(),
+    cpu: (info.cpu ?? '').trim().toLowerCase(),
+    cores: info.cores ?? 0,
+    ramGb: info.ramGb ?? 0,
+  });
+  return createHash('sha256').update(canonical).digest('hex').slice(0, 24);
+};
+
+/**
+ * Passive clone detection (Layer 4): records the first-run fingerprint/network per licence and flags
+ * unrelated fingerprints or unrelated IP networks in the hub without taking any action on the host
+ * or storing player data.
+ */
+export async function noteCloneSighting(
+  store: Store,
+  licenceId: string,
+  info: {
+    machine: string;
+    legacyMachine?: string | null;
+    fingerprint?: unknown;
+    os?: string;
+    arch?: string;
+    cpu?: string;
+    cores?: number;
+    ramGb?: number;
+    ip: string;
+  },
+  now: Date,
+): Promise<CloneRecord> {
+  const key = `clones/${licenceId}`;
+  const existing = (await store.get(key, { type: 'json' })) as CloneRecord | null;
+  const at = now.toISOString();
+  const fp = buildFingerprint(info);
+  const iph = ipHash(info.ip);
+  const neth = ipHash(`net|${ipPrefix(info.ip)}`);
+  const legacy = info.legacyMachine && info.legacyMachine !== info.machine ? info.legacyMachine : null;
+
+  if (!existing) {
+    const firstRun: CloneSighting = { fingerprint: fp, machine: info.machine, legacyMachine: legacy, ipHash: iph, netHash: neth, firstSeen: at, lastSeen: at };
+    const created: CloneRecord = { licenceId, firstRun, sightings: [firstRun], flagged: false, flaggedAt: null, reason: null };
+    await store.setJSON(key, created);
+    return created;
+  }
+
+  const sameHardwareOrLegacy = (s: CloneSighting) =>
+    s.fingerprint === fp
+    || s.machine === info.machine
+    || (legacy !== null && (s.machine === legacy || s.legacyMachine === legacy))
+    || (s.legacyMachine !== null && s.legacyMachine === info.machine);
+  const sameNetwork = (s: CloneSighting) => s.netHash === neth || s.ipHash === iph;
+
+  const matched = existing.sightings.find((s) => s.fingerprint === fp && sameNetwork(s));
+  const sightings = matched
+    ? existing.sightings.map((s) => (s === matched ? { ...s, lastSeen: at } : s))
+    : [...existing.sightings, { fingerprint: fp, machine: info.machine, legacyMachine: legacy, ipHash: iph, netHash: neth, firstSeen: at, lastSeen: at }].slice(-20);
+
+  let flagged = existing.flagged;
+  let flaggedAt = existing.flaggedAt;
+  let reason = existing.reason;
+
+  const unrelatedFingerprint = !sameHardwareOrLegacy(existing.firstRun);
+  const unrelatedIp = !sameNetwork(existing.firstRun);
+  if (!flagged && (unrelatedFingerprint || unrelatedIp)) {
+    flagged = true;
+    flaggedAt = at;
+    reason = unrelatedFingerprint && unrelatedIp
+      ? 'unrelated fingerprint and IP network'
+      : unrelatedFingerprint
+        ? 'unrelated host fingerprint'
+        : 'unrelated IP network';
+  }
+
+  const updated: CloneRecord = { ...existing, sightings, flagged, flaggedAt, reason };
+  await store.setJSON(key, updated);
+  return updated;
+}

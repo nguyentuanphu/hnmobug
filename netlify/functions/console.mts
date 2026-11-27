@@ -7,7 +7,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
 import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../lib/keys.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
+import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type CloneRecord, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
 import { readPackages, savePackages } from '../lib/licence-purchase.mts';
 import { licenceOrdersCsv, listLicenceOrders, parseLicenceOrderFilters } from '../lib/licence-orders.mts';
@@ -130,7 +130,7 @@ export default async (req: Request, context: { ip?: string }) => {
 
   if (action === 'state' && req.method === 'GET') {
     const key = await licenceKey(store);
-    const [hosts, requests, licences, devices, setups, seen, marks] = await Promise.all([
+    const [hosts, requests, licences, devices, setups, seen, marks, clones] = await Promise.all([
       listJson<HostRecord>(store, 'hosts/'),
       listJson<RequestRecord>(store, 'requests/'),
       listJson<LicenceRecord>(store, 'licences/'),
@@ -138,6 +138,7 @@ export default async (req: Request, context: { ip?: string }) => {
       listJson<SetupRecord>(store, 'setups/'),
       listJson<SeenRecord>(store, 'seen/'),
       listJson<MachineMark>(store, 'marks/'),
+      listJson<CloneRecord>(store, 'clones/'),
     ]);
     const markOf = (machine: string) => marks.find((m) => m.machine === machine);
     const { blobs } = await store.list({ prefix: 'pending/' });
@@ -146,7 +147,8 @@ export default async (req: Request, context: { ip?: string }) => {
       licenceKey: key ? { publicPem: key.publicPem, made: key.made } : null,
       hosts: hosts.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen)).map((h) => ({ ...h, test: isTestMachine(h.latest.test, markOf(h.machine)), marked: !!markOf(h.machine) })),
       requests: requests.map(({ tokenHash: _hidden, ...r }) => r).sort((a, b) => b.at.localeCompare(a.at)),
-      licences: licences.sort((a, b) => b.issued.localeCompare(a.issued)).map(({ file, ...l }) => ({ ...l, file, computers: seen.find((s) => s.licenceId === l.id)?.computers ?? [] })),
+      licences: licences.sort((a, b) => b.issued.localeCompare(a.issued)).map(({ file, ...l }) => ({ ...l, file, computers: seen.find((s) => s.licenceId === l.id)?.computers ?? [], clone: clones.find((c) => c.licenceId === l.id) ?? null })),
+      clones: clones.filter((c) => c.flagged),
       setups: setups.sort((a, b) => b.at.localeCompare(a.at)).map((s) => ({ ...s, test: isTestMachine(s.test, markOf(s.machine)), marked: !!markOf(s.machine) })),
       devices: devices.map((d) => ({ ...d, current: d.id === session.d })),
       pendingBugs: blobs.length,
