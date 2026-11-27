@@ -26,14 +26,15 @@ export default async (req: Request) => {
   }
   if (!latest || !latest.tag) return json({ error: 'none' }, 404);
   const release = base ? `${base}/releases/${encodeURIComponent(latest.tag)}` : '';
-  // The field names of the usual release feeds, so the servers read it with the same code.
+  // Public manifest_url and files_url are intentionally blank: file updates are gated through
+  // POST /api/update-check -> GET /api/update-file with a valid licence + machine + token.
   return json({
     tag_name: latest.tag,
     published_at: latest.published,
     body: latest.notes,
     html_url: latest.url || (release ? `${release}/HNMO.zip` : ''),
-    manifest_url: release ? `${release}/manifest.json` : '',
-    files_url: base ? `${base}/files/` : '',
+    manifest_url: '',
+    files_url: '',
   }, 200, { 'Cache-Control': 'public, max-age=300' });
 };
 

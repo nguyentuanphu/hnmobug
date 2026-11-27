@@ -344,8 +344,8 @@ test('the newest release: set in the console, read by HNMO servers at /api/lates
   await consoleFn(post(`${base}/api/latest`, { tag: '1.2.0', notes: 'Arena' }, as), ctx);
   const fromStorage = await (await latestFn(new Request('https://hub.example/api/latest'))).json() as Record<string, string>;
   assert.equal(fromStorage.html_url, 'https://updates.example/releases/1.2.0/HNMO.zip', 'no link: the release\'s own zip');
-  assert.equal(fromStorage.manifest_url, 'https://updates.example/releases/1.2.0/manifest.json');
-  assert.equal(fromStorage.files_url, 'https://updates.example/files/');
+  assert.equal(fromStorage.manifest_url, '');
+  assert.equal(fromStorage.files_url, '');
   await consoleFn(post(`${base}/api/latest`, { tag: '1.2.0', url: 'https://downloads.example/HNMO.zip', notes: 'Arena' }, as), ctx);
   const latest = await (await latestFn(new Request('https://hub.example/api/latest'))).json() as Record<string, string>;
   assert.equal(latest.tag_name, '1.2.0');

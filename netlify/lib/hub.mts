@@ -10,7 +10,7 @@
 //   devices/<id>        trusted browsers of the console
 //   limits/<day>/…      counters for the limits
 import { getStore } from '@netlify/blobs';
-import { createHash } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { buildKey } from './license.mts';
 import type { StoredKey } from './keys.mts';
 import type { Setup, Weekly } from './report.mts';
@@ -308,4 +308,37 @@ export async function noteCloneSighting(
   const updated: CloneRecord = { ...existing, sightings, flagged, flaggedAt, reason };
   await store.setJSON(key, updated);
   return updated;
+}
+
+export interface UpdateCheckRecord {
+  licenceId: string;
+  machineId: string;
+  buildStamp: string;
+  lastSeen: string;
+}
+
+const updateTokenSecret = (): Buffer => {
+  const s = (process.env.UPDATE_TOKEN_SECRET || '').trim();
+  if (s.length < 20) throw new Error('UPDATE_TOKEN_SECRET missing or shorter than 20 characters');
+  return createHash('sha256').update(`hnmo-update|${s}`).digest();
+};
+
+/** Mints a short-lived signed update token for one licence + machine + manifest version. */
+export function signUpdateToken(claims: { licenceId: string; machineId: string; legacyMachineId?: string | null; buildStamp: string; version: string; exp: number }): string {
+  const body = Buffer.from(JSON.stringify(claims)).toString('base64url');
+  return `${body}.${createHmac('sha256', updateTokenSecret()).update(body).digest('base64url')}`;
+}
+
+/** Verifies a short-lived signed update token and returns its claims if unexpired. */
+export function verifyUpdateToken<T extends { exp: number }>(token: string | undefined, nowMs = Date.now()): T | null {
+  if (!token || !token.includes('.')) return null;
+  const [body, mac] = token.split('.');
+  const expected = createHmac('sha256', updateTokenSecret()).update(body).digest('base64url');
+  if (mac.length !== expected.length || !timingSafeEqual(Buffer.from(mac), Buffer.from(expected))) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as T;
+    return typeof parsed.exp === 'number' && parsed.exp > nowMs ? parsed : null;
+  } catch {
+    return null;
+  }
 }
