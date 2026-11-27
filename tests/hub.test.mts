@@ -448,3 +448,43 @@ test('the owner alone can download the filtered order CSV without buyer details'
     assert.doesNotMatch(output, /fictional-buyer|192\.0\.2\.9|cs_test_|pi_fictional|catalogue metadata/);
   }
 });
+
+test('weekly auto-errors require the host credential, are cleaned, acknowledged and deduplicated', async context => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  const oldKeys = process.env.AUTO_ERROR_FORWARD_KEYS;
+  const key = 'fixture-only-'.padEnd(36, 'a');
+  process.env.AUTO_ERROR_FORWARD_KEYS = JSON.stringify({ [MACHINE]: key });
+  context.after(() => {
+    if (oldKeys === undefined) delete process.env.AUTO_ERROR_FORWARD_KEYS;
+    else process.env.AUTO_ERROR_FORWARD_KEYS = oldKeys;
+    useStoreForTests(null);
+  });
+
+  const approval = 'a'.repeat(32);
+  const sample = { kind: 'auto-error', approval, season: 's9', errorKind: 'error', fingerprint: 'error|main.js|12',
+    count: 7, message: 'person@example.invalid', stack: '192.0.2.7 /home/PrivateName Bearer fakeJwt' };
+  const payload = { machine: MACHINE, autoErrors: [sample, sample, { ...sample, approval: 'f'.repeat(32), fingerprint: 'error|person@example.invalid|12' }] };
+  const send = async (credential: string) => {
+    const response = await weeklyFn(post('/api/weekly', payload, { 'X-Hnmo-Auto-Error-Key': credential }), ctx);
+    assert.equal(response.status, 200);
+    return await response.json() as { autoAccepted: string[] };
+  };
+
+  const denied = await weeklyFn(post('/api/weekly', payload, { 'X-Hnmo-Auto-Error-Key': 'bad' }), ctx);
+  assert.equal(denied.status, 403);
+  assert.equal((await store.list({ prefix: 'pending/' })).blobs.length, 0);
+  assert.equal(await store.get(`hosts/${MACHINE}`), null);
+  assert.deepEqual((await send(key)).autoAccepted, [approval]);
+  const pending = (await store.list({ prefix: 'pending/' })).blobs;
+  assert.equal(pending.length, 1);
+  const raw = await store.get(pending[0].key, { type: 'text' }) as string;
+  assert.match(raw, /Automatic error \(s9\)/);
+  assert.doesNotMatch(raw, /example\.invalid|192\.0\.2\.7|PrivateName|fakeJwt|fixture-only/);
+
+  await store.set(pending[0].key.replace(/^pending\//, 'done/'), raw);
+  await store.delete(pending[0].key);
+  await store.delete(`hosts/${MACHINE}`);
+  assert.deepEqual((await send(key)).autoAccepted, [approval]);
+  assert.equal((await store.list({ prefix: 'pending/' })).blobs.length, 0);
+});
