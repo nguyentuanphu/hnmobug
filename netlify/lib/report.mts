@@ -27,12 +27,47 @@ export interface Stored {
 export function cleanBug(value: unknown): Bug | null {
   if (typeof value !== 'object' || value === null) return null;
   const b = value as Record<string, unknown>;
+  if (b.kind === 'auto-error') return null;
   const text = cut(b.text, 2000);
   if (text.length < 10) return null;
   const category = (CATEGORIES as readonly string[]).includes(b.category as string) ? (b.category as string) : 'other';
   return {
     id: cut(b.id, 20), category, text, server: cut(b.server, 60), place: cut(b.place, 80), status: cut(b.status, 20),
     info: cut(b.info, 3000), reply: cut(b.reply, 1000), character: cut(b.character, 40), created: cut(b.created, 40),
+  };
+}
+
+const AUTO_LABELS = new Map([
+  ['error', 'Uncaught browser error'],
+  ['rejection', 'Unhandled promise rejection'],
+  ['packet', 'Packet handler failed'],
+  ['webgl', 'WebGL context lost'],
+  ['disconnect', 'Game connection lost'],
+]);
+
+/** Accepts only the fixed fields emitted by the host's automatic error outbox. */
+export function cleanAutoError(value: unknown): { approval: string; bug: Bug } | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const entry = value as Record<string, unknown>;
+  const { approval, season, errorKind: kind, fingerprint } = entry;
+  if (entry.kind !== 'auto-error' || typeof approval !== 'string' || !/^[a-f0-9]{32}$/.test(approval)
+    || !['s6', 's9', 'arena'].includes(season as string) || typeof kind !== 'string') return null;
+  const label = AUTO_LABELS.get(kind);
+  if (!label || typeof fingerprint !== 'string' || fingerprint.length > 64) return null;
+  const [prefix, file, line, ...rest] = fingerprint.split('|');
+  if (prefix !== kind || (fingerprint !== kind && (
+    kind === 'webgl' || kind === 'disconnect' || rest.length > 0
+    || !['main.js', 'connection.js', 'session.js', 'world.js', 'renderer.js'].includes(file)
+    || !/^[1-9][0-9]{0,4}$/.test(line) || Number(line) > 50000
+  ))) return null;
+  return {
+    approval,
+    bug: {
+      id: approval, category: kind === 'disconnect' ? 'connection' : kind === 'webgl' ? 'display' : 'other',
+      text: `Automatic error (${season}): ${label} [${fingerprint}]`,
+      server: season as string, place: '', status: '', info: `Occurrences at host approval: ${num(entry.count)}`,
+      reply: '', character: '', created: '',
+    },
   };
 }
 
