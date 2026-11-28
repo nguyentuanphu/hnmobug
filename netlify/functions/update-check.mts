@@ -3,6 +3,7 @@
 // itself too; the player limit is the server's own business). A licence that is sent must be valid, bound to this
 // machine and not withdrawn. Stores only { licenceId, machineId, buildStamp, lastSeen } — zero player data.
 import { checkLicence } from '../lib/license.mts';
+import { readLimits } from '../lib/limits.mts';
 import { cleanMachine } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
 import { clientIp, countOnce, hub, ipHash, json, licenceKeys, signUpdateToken, type UpdateCheckRecord } from '../lib/hub.mts';
@@ -126,6 +127,7 @@ export default async (req: Request, context: { ip?: string }) => {
     })),
     downloadBase: `${origin}/api/update-file`,
     token,
+    limits: await readLimits(store),
   });
 };
 

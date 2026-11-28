@@ -10,6 +10,7 @@ import { sydneyDay } from '../lib/day.mts';
 import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type CloneRecord, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
 import { purge } from '../lib/cdn.mts';
+import { listLimitFlags, readLimits, saveLimits, setFlagAside } from '../lib/limits.mts';
 import { amountText, bankSettings, cancelTransfer, listOrders, markTransferPaid, paymentStatus, providers, readCatalogue, saveBankSettings, saveCatalogue, savePayos, ShopError } from '../lib/shop.mts';
 import { licenceOrdersCsv, listLicenceOrders, parseLicenceOrderFilters } from '../lib/licence-orders.mts';
 
@@ -107,6 +108,9 @@ export default async (req: Request, context: { ip?: string }) => {
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie('hnmo_session', '', base, 0) } });
   }
 
+  // The folder limits: the switch and what looks like more than allowed.
+  if (req.method === 'GET' && action === 'limits') return json({ ...(await readLimits(store)), flags: await listLimitFlags(store) });
+
   if (req.method === 'GET' && (action === 'licence-commerce' || action === 'licence-orders' || action === 'licence-orders.csv')) {
     const filters = parseLicenceOrderFilters(url.searchParams);
     const pageText = url.searchParams.get('page') ?? '1';
@@ -170,6 +174,15 @@ export default async (req: Request, context: { ip?: string }) => {
   if (action === 'licence-commerce') {
     if (!(await saveCatalogue(store, body?.packages))) return json({ error: 'packages' }, 400);
     await purge('licence-packages');
+    return json({ ok: true });
+  }
+
+  if (action === 'limits-enforce') {
+    if (typeof body?.enforce !== 'boolean') return json({ error: 'enforce' }, 400);
+    return json({ ok: true, ...(await saveLimits(store, body.enforce)) });
+  }
+  if (action === 'limits-aside') {
+    if (typeof body?.key !== 'string' || !(await setFlagAside(store, body.key))) return json({ error: 'flag' }, 400);
     return json({ ok: true });
   }
 

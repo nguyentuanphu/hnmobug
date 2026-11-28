@@ -20,7 +20,7 @@ export type Season = 's6' | 's9' | 'arena';
 export type Currency = 'vnd' | 'aud' | 'usd';
 export type Provider = 'stripe' | 'payos' | 'bank';
 export type Billing = 'month' | 'year' | 'lifetime' | 'once';
-export type Addon = 'players' | 'move' | 'second-machine' | 'upgrade';
+export type Addon = 'players' | 'folders' | 'move' | 'second-machine' | 'upgrade';
 
 export interface Text { en: string; vi: string }
 
@@ -31,6 +31,8 @@ export interface Package {
   description: Text;
   maxPlayers?: number;
   addPlayers?: number;
+  /** For a 'folders' add-on: folders that may run at once on the licensed computer. */
+  addFolders?: number;
   addon?: Addon;
   /** For an 'upgrade' add-on: the plan whose players and seasons the licence takes. */
   upgradeTo?: string;
@@ -77,6 +79,8 @@ export interface ShopLicenceRecord extends LicenceRecord {
   package?: string;
   /** Players bought as add-ons; they stay on renewals and upgrades. */
   bonusPlayers?: number;
+  /** Folders bought as add-ons (on top of the one a licence has). */
+  bonusFolders?: number;
 }
 
 const CURRENCIES: Currency[] = ['vnd', 'aud', 'usd'];
@@ -120,6 +124,11 @@ export const DEFAULT_CATALOGUE: Package[] = [
     id: 'players-100', kind: 'addon', addon: 'players', addPlayers: 100, name: text('+100 players', '+100 người chơi'),
     description: text('100 more players at once on the licence you have, until it ends.', 'Thêm 100 người chơi cùng lúc cho license đang dùng, tới khi hết hạn.'),
     seasons: [], billing: 'once', durationDays: null, prices: {}, order: 40, active: true,
+  },
+  {
+    id: 'folders-1', kind: 'addon', addon: 'folders', addFolders: 1, name: text('+1 server folder on this computer', '+1 folder server trên máy này'),
+    description: text('Lets one more HNMO server folder run at once on your licensed computer, until the licence ends.', 'Cho chạy thêm 1 folder server HNMO cùng lúc trên máy đã có license, tới khi hết hạn.'),
+    seasons: [], billing: 'once', durationDays: null, prices: {}, order: 45, active: true,
   },
   {
     id: 'upgrade-to-standard', kind: 'addon', addon: 'upgrade', upgradeTo: 'standard-year', name: text('Upgrade to Standard', 'Nâng cấp lên Standard'),
@@ -208,13 +217,18 @@ export function readPackage(value: unknown): Package | null {
     if ((billing === 'month' || billing === 'year') && durationDays === null) return null;
     result.maxPlayers = players;
   } else {
-    const addon = (['players', 'move', 'second-machine', 'upgrade'] as const).find(a => a === item.addon);
+    const addon = (['players', 'folders', 'move', 'second-machine', 'upgrade'] as const).find(a => a === item.addon);
     if (!addon || billing === 'month' || billing === 'year') return null;
     result.addon = addon;
     if (addon === 'players') {
       const more = whole(item.addPlayers, 1, 100_000);
       if (more === null) return null;
       result.addPlayers = more;
+    }
+    if (addon === 'folders') {
+      const more = whole(item.addFolders, 1, 50);
+      if (more === null) return null;
+      result.addFolders = more;
     }
     if (addon === 'second-machine') {
       const players = whole(item.maxPlayers, 1, 100_000);
@@ -569,16 +583,17 @@ async function signingKey(store: Store) {
 }
 
 /** Signs a licence, keeps it, and hands it to the computer's request (its next /api/licence poll gets it). */
-type Fields = Omit<LicenceBody, 'issued'> & { seasons: Season[]; package: string; bonusPlayers?: number };
+type Fields = Omit<LicenceBody, 'issued' | 'folders'> & { seasons: Season[]; package: string; bonusPlayers?: number; bonusFolders?: number };
 
 async function sign(store: Store, fields: Fields, request: RequestRecord | null, now: Date): Promise<ShopLicenceRecord> {
-  const { seasons, package: packageId, bonusPlayers, ...body } = fields;
-  const licence: LicenceBody & { seasons: Season[] } = { ...body, issued: now.toISOString(), seasons };
+  const { seasons, package: packageId, bonusPlayers, bonusFolders, ...body } = fields;
+  const licence: LicenceBody & { seasons: Season[] } = { ...body, issued: now.toISOString(), seasons, ...(bonusFolders ? { folders: 1 + bonusFolders } : {}) };
   const file = signLicence(licence as LicenceBody, await signingKey(store));
   const previous = (await store.get(`licences/${licence.id}`, { type: 'json' })) as ShopLicenceRecord | null;
   const record: ShopLicenceRecord = {
     ...licence, requestId: request?.id ?? previous?.requestId ?? null, revoked: null, file, seasons, package: packageId,
     ...(bonusPlayers ? { bonusPlayers } : {}),
+    ...(bonusFolders ? { bonusFolders } : {}),
     ...(previous?.manyComputers ? { manyComputers: true } : {}),
   };
   await store.setJSON(`licences/${licence.id}`, record);
@@ -605,6 +620,7 @@ export async function issueOrder(store: Store, order: ShopOrder, now = new Date(
   let record: ShopLicenceRecord | null = null;
 
   const bonus = current?.bonusPlayers ?? 0;
+  const folders = current?.bonusFolders ?? 0;
   const base = current ? current.maxPlayers - bonus : 0;
   const seasons = current?.seasons ?? ['s6'];
   if (item.kind === 'plan' || item.kind === 'trial') {
@@ -616,20 +632,22 @@ export async function issueOrder(store: Store, order: ShopOrder, now = new Date(
     record = await sign(store, {
       licensee, id: current?.id ?? newLicenceId(now), machine: order.machine,
       maxPlayers: players + bonus, expires: lifetime ? null : addDays(from, item.durationDays!),
-      seasons: renewal && current ? seasons : item.seasons, package: item.id, bonusPlayers: bonus,
+      seasons: renewal && current ? seasons : item.seasons, package: item.id, bonusPlayers: bonus, bonusFolders: folders,
     }, request, now);
   } else if (current) {
     const same = { licensee, id: current.id, machine: order.machine, expires: current.expires, package: current.package ?? item.id };
     if (item.addon === 'players') {
       const more = bonus + (item.addPlayers ?? 0);
-      record = await sign(store, { ...same, maxPlayers: base + more, seasons, bonusPlayers: more }, request, now);
+      record = await sign(store, { ...same, maxPlayers: base + more, seasons, bonusPlayers: more, bonusFolders: folders }, request, now);
+    } else if (item.addon === 'folders') {
+      record = await sign(store, { ...same, maxPlayers: current.maxPlayers, seasons, bonusPlayers: bonus, bonusFolders: Math.min(49, folders + (item.addFolders ?? 1)) }, request, now);
     } else if (item.addon === 'upgrade') {
       const target = (await readCatalogue(store)).find(p => p.id === item.upgradeTo);
-      record = await sign(store, { ...same, maxPlayers: Math.max(base, target?.maxPlayers ?? base) + bonus, seasons: target?.seasons ?? seasons, package: target?.id ?? same.package, bonusPlayers: bonus }, request, now);
+      record = await sign(store, { ...same, maxPlayers: Math.max(base, target?.maxPlayers ?? base) + bonus, seasons: target?.seasons ?? seasons, package: target?.id ?? same.package, bonusPlayers: bonus, bonusFolders: folders }, request, now);
     } else if (item.addon === 'move' && order.toMachine) {
       await store.setJSON(`licences/${current.id}`, { ...current, revoked: now.toISOString(), revokedReason: `moved to ${order.toMachine}` });
       await store.delete(`machine-licences/${order.machine}`);
-      record = await deliverToMachine(store, order.toMachine, { ...same, id: newLicenceId(now), machine: order.toMachine, maxPlayers: current.maxPlayers, seasons, bonusPlayers: bonus }, now);
+      record = await deliverToMachine(store, order.toMachine, { ...same, id: newLicenceId(now), machine: order.toMachine, maxPlayers: current.maxPlayers, seasons, bonusPlayers: bonus, bonusFolders: folders }, now);
     } else if (item.addon === 'second-machine' && order.toMachine) {
       record = await deliverToMachine(store, order.toMachine, { ...same, id: newLicenceId(now), machine: order.toMachine, maxPlayers: item.maxPlayers ?? 20, seasons, package: item.id }, now);
     }
