@@ -186,7 +186,8 @@ export default async (req: Request, context: { ip?: string }) => {
     return json({ ok: true, ...(await saveLimits(store, body.enforce)) });
   }
   if (action === 'limits-aside') {
-    if (typeof body?.key !== 'string' || !(await setFlagAside(store, body.key))) return json({ error: 'flag' }, 400);
+    if (typeof body?.key !== 'string' || typeof body.fingerprint !== 'string') return json({ error: 'flag' }, 400);
+    if (!(await setFlagAside(store, body.key, new Date(), body.fingerprint))) return json({ error: 'flag changed' }, 409);
     return json({ ok: true });
   }
 

@@ -515,9 +515,9 @@ const VIEWS = {
           try { drawLimits(await api('limits-enforce', { enforce:!state.enforce }).then(() => api('limits'))); } catch { limitsBox.append(el('p', { class:'bad', text:t('invalidPackages') })); }
         } } });
         const flagText = flag => flag.kind === 'folders'
-          ? t('flagFolders').replace('{machine}', flag.subject).replace('{count}', flag.count).replace('{allowed}', flag.allowed)
-          : t('flagAddress').replace('{code}', flag.subject).replace('{count}', flag.count);
-        const aside = flag => el('button', { type:'button', text:t('flagAside'), on:{ click:async () => { await api('limits-aside', { key:flag.key }); drawLimits(await api('limits')); } } });
+          ? t('flagFolders').replace('{machine}', flag.subject).replace('{count}', (flag.capped ? '≥' : '') + flag.count).replace('{allowed}', flag.allowed)
+          : t('flagAddress').replace('{code}', flag.subject).replace('{count}', (flag.capped ? '≥' : '') + flag.count);
+        const aside = flag => el('button', { type:'button', text:t('flagAside'), on:{ click:async () => { try { await api('limits-aside', { key:flag.key, fingerprint:flag.fingerprint }); } catch {} drawLimits(await api('limits')); } } });
         const flags = state.flags.length
           ? el('ul', { class:'list' }, ...state.flags.map(flag => el('li', {}, el('span', { text:flagText(flag) + ' · ' + when(flag.last) + ' ' }), aside(flag))))
           : el('p', { class:'muted', text:t('noFlags') });

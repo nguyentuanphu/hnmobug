@@ -6,8 +6,8 @@
 import { checkLicence } from '../lib/license.mts';
 import { cleanMachine, cleanSetup, SETUPS_PER_DAY } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
-import { cleanFolder, noteFolder, readLimits } from '../lib/limits.mts';
-import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, type SetupRecord } from '../lib/hub.mts';
+import { cleanFolder, folderEntitlement, noteFolder, readLimits } from '../lib/limits.mts';
+import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, type LicenceRecord, type SetupRecord } from '../lib/hub.mts';
 import { firstAutoErrorKey } from '../lib/shop.mts';
 
 interface Geo { country?: { code?: string; name?: string } }
@@ -22,20 +22,23 @@ export default async (req: Request, context: { ip?: string; geo?: Geo }) => {
   } catch {
     return json({ error: 'not JSON' }, 400);
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'not a setup report' }, 400);
   const machine = cleanMachine(body.machine);
   const setup = cleanSetup(body);
   if (!machine || !setup) return json({ error: 'not a setup report' }, 400);
 
   const store = hub();
-  const today = sydneyDay();
+  const receivedAt = new Date();
+  const today = sydneyDay(receivedAt);
   const ip = clientIp(req, context);
   for (const who of [`m-${machine}`, `ip-${ipHash(ip)}`]) {
     if (!(await countOnce(store, `limits/${today}/setup/${who}`, who.startsWith('m-') ? SETUPS_PER_DAY : 20))) return json({ error: 'limit' }, 429);
   }
   const legacy = cleanMachine(body.legacyMachine);
-  const licence = checkLicence(body.licence ?? null, today, await licenceKeys(store));
+  const keys = await licenceKeys(store);
+  const licence = checkLicence(body.licence ?? null, today, keys);
   const previous = (await store.get(`setups/${machine}`, { type: 'json' })) as SetupRecord | null;
-  const now = new Date().toISOString();
+  const now = receivedAt.toISOString();
   const country = context.geo?.country?.code ? `${context.geo.country.code}${context.geo.country.name ? ' · ' + context.geo.country.name : ''}` : (req.headers.get('x-country') ?? '').slice(0, 40);
   const record: SetupRecord = {
     machine,
@@ -63,7 +66,10 @@ export default async (req: Request, context: { ip?: string; geo?: Geo }) => {
       ip,
     }, new Date());
   }
-  await noteFolder(store, { machine, folder: cleanFolder(body.folder), ip, licenceId: licence.valid ? licence.id : null, allowed: licence.valid ? licence.folders : 1 }, new Date());
+  const issued = licence.valid && licence.id
+    ? (await store.get(`licences/${licence.id}`, { type: 'json' })) as LicenceRecord | null : null;
+  const entitlement = folderEntitlement(licence, issued, machine, legacy, today, keys);
+  await noteFolder(store, { machine, folder: cleanFolder(body.folder), ip, ...entitlement }, receivedAt);
   // The computer's automatic error key, the first time only (the server keeps it; it asks /api/licence for a new one).
   const autoErrorKey = await firstAutoErrorKey(store, machine);
   return json({ ok: true, limits: await readLimits(store), ...(autoErrorKey ? { autoErrorKey } : {}) });

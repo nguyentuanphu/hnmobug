@@ -8,7 +8,7 @@ import { checkLicence } from '../lib/license.mts';
 import { cleanAutoError, cleanMachine, cleanWeekly, WEEKLY_MIN_DAYS, type Stored } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
 import { checkAutoErrorKey } from '../lib/shop.mts';
-import { cleanFolder, noteFolder, readLimits } from '../lib/limits.mts';
+import { cleanFolder, folderEntitlement, noteFolder, readLimits } from '../lib/limits.mts';
 import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, noteLicenceUse, withdrawIfShared, type HostRecord, type LicenceRecord } from '../lib/hub.mts';
 
 const DAY = 24 * 3600 * 1000;
@@ -63,7 +63,8 @@ export default async (req: Request, context: { ip?: string }) => {
   const ip = clientIp(req, context);
   if (!(await countOnce(store, `limits/${today}/weekly/ip-${ipHash(ip)}`, 50))) return json({ error: 'limit' }, 429);
 
-  const licence = checkLicence(body.licence ?? null, today, await licenceKeys(store));
+  const keys = await licenceKeys(store);
+  const licence = checkLicence(body.licence ?? null, today, keys);
   const issued = licence.valid && licence.id ? (await store.get(`licences/${licence.id}`, { type: 'json' })) as LicenceRecord | null : null;
   const computers = issued ? await noteLicenceUse(store, issued.id, machine, legacy && legacy !== machine ? legacy : null, now) : [];
   const revoked = issued ? await withdrawIfShared(store, issued, computers, now) : false;
@@ -76,7 +77,8 @@ export default async (req: Request, context: { ip?: string }) => {
       ip,
     }, now);
   }
-  await noteFolder(store, { machine, folder: cleanFolder(body.folder), ip, licenceId: licence.valid ? licence.id : null, allowed: licence.valid ? licence.folders : 1 }, now);
+  const entitlement = folderEntitlement(licence, issued, machine, legacy, today, keys, revoked);
+  await noteFolder(store, { machine, folder: cleanFolder(body.folder), ip, ...entitlement }, now);
   const { bugs, ...latest } = weekly;
   const record: HostRecord = {
     machine,
