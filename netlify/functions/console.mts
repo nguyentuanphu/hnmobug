@@ -292,6 +292,31 @@ export default async (req: Request, context: { ip?: string }) => {
     return json({ ok: true, latest });
   }
 
+  // Removes an entry the owner no longer wants. Money records stay: only orders that were never paid can go, and a
+  // licence is withdrawn, not deleted. A computer that reports again shows up again.
+  if (action === 'forget') {
+    const id = cleanText(body.id, 80);
+    if (body.kind === 'machine') {
+      if (!/^[0-9a-f]{8,32}$/i.test(id)) return json({ error: 'machine' }, 400);
+      const machine = id.toLowerCase();
+      for (const key of [`hosts/${machine}`, `setups/${machine}`, `marks/${machine}`, `limit-folders/${machine}`]) await store.delete(key);
+      return json({ ok: true });
+    }
+    if (body.kind === 'request') {
+      if (!/^[A-Za-z0-9_-]{1,60}$/.test(id) || !(await store.get(`requests/${id}`))) return json({ error: 'request' }, 404);
+      await store.delete(`requests/${id}`);
+      return json({ ok: true });
+    }
+    if (body.kind === 'order') {
+      const order = /^[A-Za-z0-9_-]{1,60}$/.test(id) ? (await store.get(`shop-orders/${id}`, { type: 'json' })) as { status?: string } | null : null;
+      if (!order) return json({ error: 'order' }, 404);
+      if (!['pending', 'awaiting-transfer', 'cancelled', 'expired'].includes(order.status ?? '')) return json({ error: 'paid orders stay' }, 409);
+      await store.delete(`shop-orders/${id}`);
+      return json({ ok: true });
+    }
+    return json({ error: 'kind' }, 400);
+  }
+
   if (action === 'forget-device') {
     const id = cleanText(body.device, 60);
     await store.delete(`devices/${id}`);

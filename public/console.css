@@ -118,3 +118,21 @@ details.pkg[open] > summary.pkg-head { border-bottom: 1px solid var(--line); bac
 .methods { display: grid; gap: .85rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr)); align-items: start; }
 .methods .card { margin: 0; }
 .list .chips { display: inline-flex; margin-inline-start: .4rem; }
+
+/* Packages in groups; swipe to delete */
+.pkg-groups { display: grid; gap: .6rem; margin-bottom: .85rem; }
+details.grp { border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); }
+details.grp > summary.grp-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .6rem; padding: .7rem 1rem; list-style: none; cursor: pointer; color: var(--text); }
+details.grp > summary.grp-head::-webkit-details-marker { display: none; }
+details.grp > summary.grp-head::before { content: "\25B8"; color: var(--accent); transition: transform .12s; }
+details.grp[open] > summary.grp-head::before { transform: rotate(90deg); }
+.grp-title { font-weight: 700; margin-inline-end: auto; }
+details.grp > .pkg-list { margin: 0; padding: 0 .75rem .75rem; }
+details.pkg > summary.pkg-head .facts { flex: 1 1 100%; margin-inline-start: 1.4rem; font-size: .85rem; }
+.swipe { position: relative; overflow: hidden; border-radius: .6rem; margin-bottom: .85rem; background: #7d2a25; }
+.swipe .card { margin-bottom: 0; }
+.swipe-front { position: relative; touch-action: pan-y; background: var(--bg); }
+.swipe-del { position: absolute; inset-block: 0; inset-inline-end: 0; width: 6rem; border: 0; border-radius: 0; background: #7d2a25; color: #fff; font-weight: 700; }
+.swipe-del:hover { background: #983630; border: 0; }
+li > .swipe { margin: 0; }
+.order-row { padding: .4rem 0; }
