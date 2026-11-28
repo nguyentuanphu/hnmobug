@@ -61,7 +61,7 @@ export function consolePage(base: string): string {
 const BASE = ${JSON.stringify(base)};
 const T = {
   en: { console:'HNMO console', pendingRequests:'Pending licence requests', pendingReports:'Pending bug reports', menu:'Sections', trustHint:'Browser trust renews for 365 days each time you sign in. Remove a browser to end its trust and sign it out.', active:'Active', expired:'Expired', unbound:'Any computer', noExpiry:'No expiry', setupTitle:'First use: set your sign-in', setupHint:'Paste the hub key (HUB_KEY from the site settings) to prove it is you, and choose the console password. This is asked only once.', hubKey:'Hub key (HUB_KEY)', newPassword:'New password (12 characters or more)', again:'The password again', setupSave:'Save', differ:'The two passwords differ or are shorter than 12 characters.', appTitle:'Add the console to your authenticator app', appHint:'In Google Authenticator or Microsoft Authenticator: add an account, choose "Enter a setup key", name it HNMO console, and type the key below (time based). Then type the 6-digit code it shows.', appKey:'Key:', appLink:'or open this link on the phone', password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
-    commerce:'Licence packages', orderReview:'Test licence orders', commerceHint:'Enter packages as a JSON array. Each package needs id, name, description, currency (aud, usd or vnd) and unitAmount (cents for AUD/USD, whole đồng for VND). Checkout is test-only. Review paid orders before issuing any licence.', invalidPackages:'Could not save. Review the package fields and make sure each ID is unique.', commerceUnavailable:'Could not load licence packages.', paid:'Test payment verified', review:'Refund or dispute — review required',
+    commerce:'Licence packages', orderReview:'Older test orders', commerceHint:'Fill in the prices: "prices": {"vnd": whole đồng, "aud": cents, "usd": cents}. A package without a price is not sold; the trial is free. Saving updates the License page of every server. Licences are signed by themselves once a payment is confirmed.', shopOrders:'Orders', bankTitle:'Bank transfer (VietQR)', bankHint:'Your account for ordinary transfers: the server shows its VietQR code with the amount and the order note. Mark an order paid when the money is on your statement; unpaid ones end after 7 days.', bankBin:'Bank (NAPAS BIN, 6 digits)', bankAccount:'Account number', bankName:'Account name', bankPrefix:'Note starts with', bankClear:'Remove', markPaid:'Mark as paid', cancelOrder:'Cancel', confirmPaid:'Did you see this amount with this note on your bank statement?', noShopOrders:'No orders yet.', 'st-pending':'Waiting for payment', 'st-awaiting-transfer':'Waiting for the transfer', 'st-paid':'Paid', 'st-issued':'Licence issued', 'st-refunded':'Refunded · withdrawn', 'st-failed':'Paid · nothing to change', 'st-cancelled':'Cancelled', 'st-expired':'Ended unpaid', invalidBank:'Check the bank: 6-digit BIN, account number, the account name in capitals.', invalidPackages:'Could not save. Review the package fields and make sure each ID is unique.', commerceUnavailable:'Could not load licence packages.', paid:'Test payment verified', review:'Refund or dispute — review required',
     orderStatus:'Status', allOrders:'All statuses', orderFrom:'From date (Sydney)', orderTo:'To date (Sydney)',
     pendingOrder:'Awaiting test payment', filterOrders:'Apply filters', resetOrders:'Clear filters', exportOrders:'Download filtered CSV',
     ordersLoading:'Loading test orders…', ordersUnavailable:'Could not load test orders.', ordersInvalid:'Enter a valid Sydney date range.',
@@ -74,7 +74,7 @@ const T = {
     host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', cloneFlagged:'clone flagged (passive)', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id',
     noMuName:'(unnamed server)', noHost:'host not filled in', markTest:'It is a test machine', markReal:'It is a real host', allTest:'Mark every real host here as a test machine', allTestAsk:'Mark all these as your test machines?', details:'Details', firstSetup:'First setup', noReport:'no weekly report yet', latestTitle:'Newest HNMO release', latestHint:'The version HNMO servers are offered (their admin panel shows it with an Update button). Build it first: the package workflow uploads each version to the update storage. Empty version: none offered. The download link may stay empty (the version’s HNMO.zip on the update storage).', latestTag:'Version (1.0.0)', latestUrl:'Download link of the whole folder (optional)', latestNotes:'Notes', save:'Save', machineId:'Machine id', plugins:'plug-ins', reportsSent:'bug reports', none2:'No test machines.' },
   vi: { console:'Quản lý HNMO', pendingRequests:'Yêu cầu giấy phép đang chờ', pendingReports:'Báo lỗi đang chờ', menu:'Các mục', trustHint:'Mỗi lần đăng nhập, trình duyệt được tin cậy thêm 365 ngày. Xóa một trình duyệt để hủy tin cậy và đăng xuất trình duyệt đó.', active:'Đang hoạt động', expired:'Đã hết hạn', unbound:'Bất kỳ máy nào', noExpiry:'Không hết hạn', setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
-    commerce:'Gói giấy phép', orderReview:'Đơn giấy phép thử nghiệm', commerceHint:'Nhập danh sách gói dạng JSON. Mỗi gói cần id, name, description, currency (aud, usd hoặc vnd) và unitAmount (cent cho AUD/USD, số đồng cho VND). Chỉ thanh toán thử nghiệm. Kiểm tra đơn đã trả tiền trước khi cấp giấy phép.', invalidPackages:'Không lưu được. Kiểm tra các trường và đảm bảo mỗi mã gói là duy nhất.', commerceUnavailable:'Không tải được các gói giấy phép.', paid:'Đã xác minh thanh toán thử', review:'Có hoàn tiền hoặc tranh chấp, cần kiểm tra',
+    commerce:'Gói giấy phép', orderReview:'Đơn thử nghiệm cũ', commerceHint:'Điền giá: "prices": {"vnd": số đồng, "aud": cent, "usd": cent}. Gói không có giá thì không bán; gói dùng thử miễn phí. Lưu xong, trang License của mọi server cập nhật theo. Giấy phép tự được ký khi thanh toán được xác nhận.', shopOrders:'Đơn hàng', bankTitle:'Chuyển khoản ngân hàng (VietQR)', bankHint:'Tài khoản nhận chuyển khoản thường: server hiện mã VietQR có sẵn số tiền và nội dung của đơn. Bấm "Đã nhận tiền" khi thấy tiền trong sao kê; đơn chưa trả quá 7 ngày tự hết hạn.', bankBin:'Ngân hàng (mã BIN NAPAS, 6 số)', bankAccount:'Số tài khoản', bankName:'Tên chủ tài khoản', bankPrefix:'Nội dung bắt đầu bằng', bankClear:'Xoá', markPaid:'Đã nhận tiền', cancelOrder:'Huỷ', confirmPaid:'Anh đã thấy đúng số tiền với nội dung này trong sao kê chưa?', noShopOrders:'Chưa có đơn nào.', 'st-pending':'Chờ thanh toán', 'st-awaiting-transfer':'Chờ chuyển khoản', 'st-paid':'Đã trả tiền', 'st-issued':'Đã cấp giấy phép', 'st-refunded':'Đã hoàn tiền · đã thu hồi', 'st-failed':'Đã trả · không có gì để đổi', 'st-cancelled':'Đã huỷ', 'st-expired':'Hết hạn, chưa trả', invalidBank:'Kiểm tra ngân hàng: mã BIN 6 số, số tài khoản, tên chủ tài khoản viết hoa.', invalidPackages:'Không lưu được. Kiểm tra các trường và đảm bảo mỗi mã gói là duy nhất.', commerceUnavailable:'Không tải được các gói giấy phép.', paid:'Đã xác minh thanh toán thử', review:'Có hoàn tiền hoặc tranh chấp, cần kiểm tra',
     orderStatus:'Trạng thái', allOrders:'Mọi trạng thái', orderFrom:'Từ ngày (giờ Sydney)', orderTo:'Đến ngày (giờ Sydney)',
     pendingOrder:'Đang chờ thanh toán thử', filterOrders:'Lọc đơn', resetOrders:'Xóa bộ lọc', exportOrders:'Tải CSV theo bộ lọc',
     ordersLoading:'Đang tải đơn thử nghiệm…', ordersUnavailable:'Không tải được đơn thử nghiệm.', ordersInvalid:'Nhập khoảng ngày hợp lệ theo giờ Sydney.',
@@ -259,8 +259,8 @@ const VIEWS = {
   },
   commerce() {
     const panel = el('div', { class:'card', 'aria-live':'polite' });
-    api('licence-commerce?page=1').then(({ packages, orders, hasMore }) => {
-      const input = el('textarea', { id:'package-catalogue', rows:'12', spellcheck:'false', on:{ input:() => { editing = true; } } });
+    api('licence-commerce?page=1').then(({ packages, orders, hasMore, shopOrders, bank }) => {
+      const input = el('textarea', { id:'package-catalogue', rows:'16', spellcheck:'false', on:{ input:() => { editing = true; } } });
       input.value = JSON.stringify(packages, null, 2);
       const message = el('p', { role:'status' });
       const save = el('button', { type:'submit', class:'primary', text:t('save') });
@@ -277,7 +277,41 @@ const VIEWS = {
           save.disabled = false;
         }
       } } }, el('label', { for:'package-catalogue', text:t('commerce') }), el('p', { text:t('commerceHint') }), input, save, message);
-      panel.replaceChildren(form, el('h2', { text:t('orderReview') }), orderResults({ orders, hasMore }));
+
+      const fields = {
+        bin: el('input', { inputmode:'numeric', maxlength:'6', value:bank?.bin ?? '' }),
+        account: el('input', { maxlength:'19', value:bank?.account ?? '' }),
+        accountName: el('input', { maxlength:'50', value:bank?.accountName ?? '' }),
+        notePrefix: el('input', { maxlength:'8', value:bank?.notePrefix ?? 'HNMO' }),
+      };
+      const bankMessage = el('p', { role:'status' });
+      const sendBank = async value => {
+        try { await api('shop-bank', { bank:value }); bankMessage.textContent = t('saved'); } catch { bankMessage.textContent = t('invalidBank'); }
+      };
+      const bankForm = el('form', { on:{ submit:event => { event.preventDefault(); sendBank(Object.fromEntries(Object.entries(fields).map(([k, i]) => [k, i.value]))); } } },
+        el('h2', { text:t('bankTitle') }), el('p', { class:'muted', text:t('bankHint') }),
+        el('div', { class:'grid' }, el('label', {}, t('bankBin'), fields.bin), el('label', {}, t('bankAccount'), fields.account),
+          el('label', {}, t('bankName'), fields.accountName), el('label', {}, t('bankPrefix'), fields.notePrefix)),
+        el('p', { class:'row' }, el('button', { type:'submit', class:'primary', text:t('save') }),
+          el('button', { type:'button', text:t('bankClear'), on:{ click:() => sendBank(null) } })), bankMessage);
+
+      const list = el('ul', { class:'list' });
+      if (!shopOrders.length) list.append(el('li', { class:'muted', text:t('noShopOrders') }));
+      for (const o of shopOrders) {
+        const name = o.name[lang] ?? o.name.en;
+        const line = [when(o.at), name, o.amount, o.provider, t('st-' + o.status), o.transferCode, o.machine, o.toMachine ? '→ ' + o.toMachine : '', o.licenceId, o.note].filter(Boolean).join(' · ');
+        const item = el('li', { text:line });
+        if (o.status === 'awaiting-transfer') {
+          const act = (action, ask) => el('button', { type:'button', text:t(action === 'shop-order-paid' ? 'markPaid' : 'cancelOrder'), on:{ click:async () => {
+            if (ask && !confirm(t('confirmPaid') + ' · ' + o.amount + ' · ' + o.transferCode)) return;
+            await api(action, { order:o.id });
+            render();
+          } } });
+          item.append(' ', act('shop-order-paid', true), ' ', act('shop-order-cancel', false));
+        }
+        list.append(item);
+      }
+      panel.replaceChildren(form, bankForm, el('h2', { text:t('shopOrders') }), list, el('h2', { text:t('orderReview') }), orderResults({ orders, hasMore }));
     }).catch(() => { panel.textContent = t('commerceUnavailable'); });
     return panel;
   },

@@ -6,7 +6,8 @@
     "test": "node --test tests/*.test.mts"
   },
   "dependencies": {
-    "@netlify/blobs": "^11.1.9"
+    "@netlify/blobs": "^11.1.9",
+    "@netlify/cache": "^4.2.2"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

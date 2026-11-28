@@ -45,13 +45,24 @@ developer), and the authenticator key is shown there. `tools/make-secrets.mts` i
 4. Open `https://<site>/c/<CONSOLE_SLUG>/`: paste the hub key, choose the password, add the shown key to an
    authenticator app, type its 6-digit code. Then Security → make the licence key and give its public key to Claude.
 
-## Licence package checkout (test only)
+## Licence shop (automatic)
 
-Edit the public catalogue from **Licence packages** in the signed-in console. Prices are integers in cents for AUD and USD,
-and in whole đồng for VND. An empty array clears the catalogue. The public page is `/packages.html`.
+An HNMO server's admin panel (License page) lists the packages, opens the payment, and gets the licence by itself: the
+hub signs it with the licence key as soon as the payment is confirmed, and the server's next `POST /api/licence` brings it
+back. Every package gets every update (owner, 2026-11-28).
 
-To enable checkout, set `LICENCE_CHECKOUT_ORIGIN` to the site's exact HTTPS origin, `LICENCE_STRIPE_TEST_KEY` to a test secret
-or restricted key, and `LICENCE_STRIPE_WEBHOOK_SECRET` to the test endpoint's signing secret in the hosting environment.
-Use the test webhook at `/api/licence-stripe` with Checkout completion, async payment success, charge refund and charge
-dispute creation events. The console shows recent test orders and flags refunds and disputes for review. The owner
-continues to issue licences separately. Checkout accepts only test sessions.
+- **Prices:** console → Licence packages. The catalogue starts with every package and no price (trial, Starter/Standard/
+  Pro monthly, yearly and lifetime, +100 players, upgrades, move, second computer); a package without a price isn't
+  sold. `"prices": {"vnd": whole đồng, "aud": cents, "usd": cents}`.
+- **Cards (Stripe):** `STRIPE_SECRET_KEY` (`sk_live_…`) and `STRIPE_WEBHOOK_SECRET` (`whsec_…`); the test keys
+  `LICENCE_STRIPE_TEST_KEY` / `LICENCE_STRIPE_WEBHOOK_SECRET` are used when no live key is set. Webhook:
+  `https://<site>/api/licence-stripe` with `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+  `invoice.paid`, `charge.refunded`, `charge.dispute.created`.
+- **VietQR through PayOS (automatic):** `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`; webhook
+  `https://<site>/api/licence-payos`.
+- **Ordinary bank transfer (VietQR, confirmed by hand):** console → Licence packages → Bank transfer: bank BIN, account,
+  account name. The server shows the QR code with the amount and the order's note; "Mark as paid" in Orders signs the
+  licence. Unpaid transfers end after 7 days.
+- `HUB_ORIGIN` (optional): the address of the hub's own pages after a payment (default `https://hnmobug.netlify.app`).
+- **Fewer function calls:** `GET /api/licence-packages`, `/api/latest` and `/download` stay on Netlify's CDN for a day
+  (purged when the console changes them); `/api/licence` tells servers when to ask again (`retryAfterSeconds`).

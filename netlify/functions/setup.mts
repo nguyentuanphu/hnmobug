@@ -1,11 +1,13 @@
 // POST /api/setup: an HNMO server's first-setup report (owner's choice, 2026-11-21), sent once about ten minutes after its
 // first start: its system (OS, CPU and cores, RAM, free disk, HNMO and .NET versions, machine id), its game (name,
 // servers and seasons on, public address, language) and the host's optional name and contact. The hub keeps it with the
-// IP it came from and that IP's country; the server's setup page tells the host so. Never player accounts.
+// IP it came from and that IP's country; the server's setup page tells the host so. Never player accounts. The first
+// answer brings the computer's automatic error key (autoErrorKey).
 import { checkLicence } from '../lib/license.mts';
 import { cleanMachine, cleanSetup, SETUPS_PER_DAY } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
 import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, type SetupRecord } from '../lib/hub.mts';
+import { firstAutoErrorKey } from '../lib/shop.mts';
 
 interface Geo { country?: { code?: string; name?: string } }
 
@@ -60,7 +62,9 @@ export default async (req: Request, context: { ip?: string; geo?: Geo }) => {
       ip,
     }, new Date());
   }
-  return json({ ok: true });
+  // The computer's automatic error key, the first time only (the server keeps it; it asks /api/licence for a new one).
+  const autoErrorKey = await firstAutoErrorKey(store, machine);
+  return json({ ok: true, ...(autoErrorKey ? { autoErrorKey } : {}) });
 };
 
 export const config = { path: '/api/setup' };

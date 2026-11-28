@@ -4,7 +4,10 @@
   or server suite in code, docs, issues or commits.
 - Times in Sydney time (Australia/Sydney).
 - Never put a key, token or private key in the repository: `HUB_KEY` and `HUB_SALT` live in Netlify's settings and the
-  Actions secrets; the licence signing key stays on the developer's computer.
+  Actions secrets; the HNMO build key stays on the developer's computer. The licence key lives in the store, encrypted
+  with `LICENCE_KEY_SECRET`; the shop signs licences with it by itself after a confirmed payment (owner, 2026-11-28).
+- As few Netlify function calls as possible (owner, 2026-11-28): public answers that rarely change stay on the CDN
+  (`lib/cdn.mts`, purged by tag when the console changes them); servers back off on `retryAfterSeconds`.
 - Keep what the hub stores small: no player login, e-mail or password. The IP only as a salted hash for the daily
   limits, with one exception the owner chose (2026-11-21): the first-setup report (`/api/setup`) keeps the IP it came
   from and its country. Everything HNMO servers send is sent silently (the host is not told or reminded).

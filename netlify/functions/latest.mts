@@ -1,7 +1,10 @@
 // GET /api/latest: the newest HNMO release as the developer published it in the console (Security): its version,
 // date, notes, the whole folder's download link, and where the updater finds its files (owner, 2026-11-21: updates by
 // file on Cloudflare R2, UPDATES_URL = the bucket's public address). HNMO servers' "Update" and the "Download HNMO"
-// link of their website read it, so no HNMO folder points at where HNMO is built. 404 while none is published.
+// link of their website read it, so no HNMO folder points at where HNMO is built. 404 while none is published. Both
+// answers stay on the CDN (tag `latest`, purged when the console publishes a release): one function call a day, not one
+// per visitor.
+import { CDN_HEADERS } from '../lib/cdn.mts';
 import { hub, json } from '../lib/hub.mts';
 
 export interface LatestRelease { tag: string; url: string; notes: string; published: string }
@@ -23,13 +26,13 @@ export default async (req: Request) => {
         !storage.search && !storage.hash && !/(^|\.)(github\.com|githubusercontent\.com|github\.io)$/i.test(storage.hostname)) {
       const file = ARCHIVES[(url.searchParams.get('os') || '').toLowerCase()] ?? 'HNMO.zip';
       const archive = `${base}/releases/${encodeURIComponent(latest.tag)}/${file}`;
-      return new Response(null, { status: 302, headers: { Location: archive, 'Cache-Control': 'no-store' } });
+      return new Response(null, { status: 302, headers: { Location: archive, ...CDN_HEADERS('latest'), 'Netlify-Vary': 'query=os' } });
     }
     return new Response(req.method === 'HEAD' ? null : 'Tệp tải xuống tạm thời chưa có. Vui lòng thử lại sau.\nThe download is temporarily unavailable. Please try again later.', {
       status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
     });
   }
-  if (!latest || !latest.tag) return json({ error: 'none' }, 404);
+  if (!latest || !latest.tag) return json({ error: 'none' }, 404, CDN_HEADERS('latest'));
   const release = base ? `${base}/releases/${encodeURIComponent(latest.tag)}` : '';
   // Public manifest_url and files_url are intentionally blank: file updates are gated through
   // POST /api/update-check -> GET /api/update-file with a valid licence + machine + token.
@@ -40,7 +43,7 @@ export default async (req: Request) => {
     html_url: latest.url || (release ? `${release}/HNMO.zip` : ''),
     manifest_url: '',
     files_url: '',
-  }, 200, { 'Cache-Control': 'public, max-age=300' });
+  }, 200, CDN_HEADERS('latest'));
 };
 
 export const config = { path: ['/api/latest', '/download'] };
