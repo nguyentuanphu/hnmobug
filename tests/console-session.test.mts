@@ -39,3 +39,29 @@ test('a session lasts 30 days and is renewed once it is a day old; a fresh one i
   await store.delete('devices/mine');
   assert.equal((await state('hnmo_session=' + sign({ exp: Date.now() + 5 * DAY, d: 'mine' }))).status, 401, 'removing the device ends its sessions');
 });
+
+test('forget: a computer or a request goes, an unpaid order goes, a paid order and bad input stay', async (t) => {
+  const store = memoryStore();
+  useStoreForTests(store);
+  t.after(() => useStoreForTests(null));
+  await store.setJSON('devices/mine', { id: 'mine', name: 'browser', added: '', lastSeen: '' });
+  const cookie = 'hnmo_session=' + sign({ exp: Date.now() + 5 * DAY, d: 'mine' });
+  const forget = (body: unknown) => consoleFn(new Request(`https://hub.example/c/${process.env.CONSOLE_SLUG}/api/forget`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie, 'X-Console': '1' }, body: JSON.stringify(body),
+  }), ctx);
+  const machine = '00000000000000aa';
+  for (const key of [`hosts/${machine}`, `setups/${machine}`, `marks/${machine}`, `limit-folders/${machine}`, 'requests/req-1', 'shop-orders/o-open', 'shop-orders/o-paid']) {
+    await store.setJSON(key, key.startsWith('shop-orders/o-paid') ? { status: 'issued' } : key.startsWith('shop-orders') ? { status: 'expired' } : { id: key });
+  }
+  assert.equal((await forget({ kind: 'machine', id: machine })).status, 200);
+  for (const key of [`hosts/${machine}`, `setups/${machine}`, `marks/${machine}`, `limit-folders/${machine}`]) assert.equal(await store.get(key), null, key);
+  assert.equal((await forget({ kind: 'request', id: 'req-1' })).status, 200);
+  assert.equal(await store.get('requests/req-1'), null);
+  assert.equal((await forget({ kind: 'request', id: 'req-1' })).status, 404, 'already gone');
+  assert.equal((await forget({ kind: 'order', id: 'o-open' })).status, 200);
+  assert.equal((await forget({ kind: 'order', id: 'o-paid' })).status, 409, 'a paid order stays');
+  assert.notEqual(await store.get('shop-orders/o-paid'), null);
+  assert.equal((await forget({ kind: 'machine', id: '../licences' })).status, 400);
+  assert.equal((await forget({ kind: 'licence', id: 'L-1' })).status, 400, 'licences are withdrawn, not deleted');
+  assert.equal((await forget({ kind: 'order', id: '../x' })).status, 404);
+});
