@@ -4,7 +4,7 @@
 // POST /api/licence-payos: PayOS (bank transfer/VietQR; signature over the sorted data fields): code '00' for the
 //      order's amount issues the licence. PayOS checks the address with a test call when it is set up: answered 200.
 import { hub, json } from '../lib/hub.mts';
-import { applyPayosWebhook, applyStripeEvent, authenticStripeEvent, payosSettings, stripeSettings } from '../lib/shop.mts';
+import { applyPayosWebhook, applyStripeEvent, authenticStripeEvent, payosFor, stripeSettings } from '../lib/shop.mts';
 
 export default async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
@@ -13,7 +13,7 @@ export default async (req: Request) => {
   const path = new URL(req.url).pathname;
 
   if (path === '/api/licence-payos') {
-    const settings = payosSettings();
+    const settings = await payosFor(hub());
     if (!settings) return json({ error: 'offline' }, 503);
     let hook: unknown;
     try {

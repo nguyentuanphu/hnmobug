@@ -10,7 +10,7 @@ import { usePurgerForTests } from '../netlify/lib/cdn.mts';
 import { sign as signSession } from '../netlify/lib/auth.mts';
 import {
   DEFAULT_CATALOGUE, authenticPayos, forSale, listOrders, markTransferPaid, parseCatalogue, payosSignature, readCatalogue,
-  saveCatalogue, TRANSFER_DAYS, type Package, type ShopOrder,
+  payosFor, paymentStatus, providers, savePayos, saveCatalogue, TRANSFER_DAYS, type Package, type ShopOrder,
 } from '../netlify/lib/shop.mts';
 import { memoryStore } from './memory-store.mts';
 import shopFn from '../netlify/functions/licence-packages.mts';
@@ -349,4 +349,31 @@ test('a paid order whose licence failed to issue gets it on the next try, once',
   const licence = checkLicence((await poll(MACHINE, auth)).licence, today(), await licenceKeys(store));
   assert.ok(licence.valid && licence.maxPlayers === 50);
   await assert.rejects(markTransferPaid(store, answer.order), /not waiting/, 'and not a second time');
+});
+
+test('PayOS keys typed in the console are kept encrypted, read back for checkout, and never shown', async () => {
+  const store = memoryStore();
+  const none = {} as NodeJS.ProcessEnv;
+  assert.equal(await payosFor(store, none), null);
+  assert.equal((await providers(store, none)).payos, false);
+
+  assert.equal(await savePayos(store, { clientId: 'short', apiKey: 'apikey-12345678', checksumKey: 'checksum-1234567890abcdef' }), false, 'too short');
+  assert.equal(await savePayos(store, { clientId: 'client-12345678', apiKey: 'api key 12345678', checksumKey: 'checksum-1234567890abcdef' }), false, 'spaces');
+  const keys = { clientId: 'client-12345678', apiKey: 'apikey-12345678', checksumKey: 'checksum-1234567890abcdef' };
+  assert.equal(await savePayos(store, keys), true);
+
+  const stored = JSON.stringify(await store.get('config/payos', { type: 'json' }));
+  for (const secret of Object.values(keys)) assert.ok(!stored.includes(secret), 'the store holds no plain key');
+  assert.deepEqual(await payosFor(store, none), keys);
+  assert.equal((await providers(store, none)).payos, true);
+  const status = await paymentStatus(store, none);
+  assert.deepEqual([status.payos, status.payosClientTail], ['console', '5678']);
+  assert.ok(!JSON.stringify(status).includes('apikey'), 'the console never gets the keys back');
+
+  const site = { PAYOS_CLIENT_ID: 'site-client-0001', PAYOS_API_KEY: 'site-apikey-0001', PAYOS_CHECKSUM_KEY: 'site-checksum-0123456789' } as NodeJS.ProcessEnv;
+  assert.equal((await payosFor(store, site))?.clientId, 'site-client-0001', 'the site settings win');
+  assert.equal((await paymentStatus(store, site)).payos, 'site');
+
+  assert.equal(await savePayos(store, null), true);
+  assert.equal(await payosFor(store, none), null, 'removed');
 });

@@ -10,7 +10,7 @@ import { sydneyDay } from '../lib/day.mts';
 import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type CloneRecord, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
 import { purge } from '../lib/cdn.mts';
-import { amountText, bankSettings, cancelTransfer, listOrders, markTransferPaid, providers, readCatalogue, saveBankSettings, saveCatalogue, ShopError } from '../lib/shop.mts';
+import { amountText, bankSettings, cancelTransfer, listOrders, markTransferPaid, paymentStatus, providers, readCatalogue, saveBankSettings, saveCatalogue, savePayos, ShopError } from '../lib/shop.mts';
 import { licenceOrdersCsv, listLicenceOrders, parseLicenceOrderFilters } from '../lib/licence-orders.mts';
 
 interface Session { exp: number; d: string }
@@ -125,13 +125,13 @@ export default async (req: Request, context: { ip?: string }) => {
     }
     const results = listLicenceOrders(store, filters, Number(pageText));
     if (action === 'licence-orders') return json(await results);
-    const [packages, orderPage, shopOrders, bank, payWith] = await Promise.all([readCatalogue(store), results, listOrders(store), bankSettings(store), providers(store)]);
+    const [packages, orderPage, shopOrders, bank, payWith, payStatus] = await Promise.all([readCatalogue(store), results, listOrders(store), bankSettings(store), providers(store), paymentStatus(store)]);
     const shop = shopOrders.slice(0, 200).map(o => ({
       id: o.id, at: o.at, package: o.package.id, name: o.package.name, machine: o.machine, toMachine: o.toMachine, provider: o.provider,
       amount: amountText(o.amount, o.currency), status: o.status, transferCode: o.transferCode ?? null, licenceId: o.licenceId ?? null,
       paidAt: o.paidAt ?? null, issuedAt: o.issuedAt ?? null, refundedAt: o.refundedAt ?? null, note: o.note ?? null,
     }));
-    const extra = { shopOrders: shop, bank, providers: payWith };
+    const extra = { shopOrders: shop, bank, providers: payWith, payStatus };
     return url.searchParams.has('page') ? json({ packages, ...orderPage, ...extra }) : json({ packages, orders: orderPage.orders, ...extra });
   }
 
@@ -171,6 +171,13 @@ export default async (req: Request, context: { ip?: string }) => {
     if (!(await saveCatalogue(store, body?.packages))) return json({ error: 'packages' }, 400);
     await purge('licence-packages');
     return json({ ok: true });
+  }
+
+  // PayOS keys typed in the console (null clears them); the answer never repeats the keys.
+  if (action === 'shop-payos') {
+    if (!(await savePayos(store, body?.payos ?? null))) return json({ error: 'payos' }, 400);
+    await purge('licence-packages');
+    return json({ ok: true, payStatus: await paymentStatus(store) });
   }
 
   // The owner's bank for transfers from a VietQR code (null clears it).
