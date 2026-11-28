@@ -113,7 +113,20 @@ function labels() {
 function showSetup() { document.getElementById('app').hidden = true; document.getElementById('login').hidden = true; document.getElementById('setup').hidden = false; labels(); }
 function showLogin() { document.getElementById('setup').hidden = true; document.getElementById('setup-done').hidden = true; document.getElementById('app').hidden = true; document.getElementById('logout').hidden = true; document.getElementById('login').hidden = false; labels(); }
 let editing = false;
-async function load() { state = await api('state'); editing = false; document.getElementById('login').hidden = true; document.getElementById('app').hidden = false; document.getElementById('logout').hidden = false; render(); }
+async function load(background) {
+  const next = await api('state');
+  // A refresh in the background changes nothing on screen unless the data changed and nobody is busy in the page.
+  if (background && state) {
+    if (JSON.stringify(next) === JSON.stringify(state)) return;
+    const busy = document.activeElement && view.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName);
+    if (busy || view.querySelector('details[open]')) { state = next; return; }
+  }
+  state = next; editing = false;
+  document.getElementById('login').hidden = true; document.getElementById('app').hidden = false; document.getElementById('logout').hidden = false;
+  const top = window.scrollY;
+  render();
+  if (background) window.scrollTo(0, top);
+}
 const menu = document.getElementById('menu');
 const tabs = document.getElementById('tabs');
 const viewTitle = document.getElementById('view-title');
@@ -589,12 +602,12 @@ labels();
 fetch(BASE + '/api/status', { credentials: 'same-origin' }).then((r) => r.json()).then((s) => {
   if (!s.configured) { showSetup(); return; }
   load().catch(() => showLogin());
-  // New requests, reports and servers show up without a reload: when the tab comes back and every minute, unless a
+  // New requests, reports and servers show up without a reload: when the tab comes back and every two minutes, unless a
   // form on the page has unsaved typing.
   document.getElementById('view').addEventListener('input', () => { editing = true; });
-  const refresh = () => { if (document.visibilityState === 'visible' && !document.getElementById('app').hidden && !editing) load().catch(() => {}); };
+  const refresh = () => { if (document.visibilityState === 'visible' && !document.getElementById('app').hidden && !editing) load(true).catch(() => {}); };
   document.addEventListener('visibilitychange', refresh);
-  setInterval(refresh, 60000);
+  setInterval(refresh, 120000);
 }).catch(() => showLogin());
 </script>
 </body></html>`;
