@@ -7,11 +7,12 @@ import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { checkLicence } from '../lib/license.mts';
 import { cleanAutoError, cleanMachine, cleanWeekly, WEEKLY_MIN_DAYS, type Stored } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
+import { checkAutoErrorKey } from '../lib/shop.mts';
 import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, noteLicenceUse, withdrawIfShared, type HostRecord, type LicenceRecord } from '../lib/hub.mts';
 
 const DAY = 24 * 3600 * 1000;
 
-function mayForwardAutomatic(machine: string, supplied: unknown): boolean {
+function mayForwardWithSetting(machine: string, supplied: unknown): boolean {
   if (typeof supplied !== 'string' || supplied.length < 32 || supplied.length > 256) return false;
   try {
     const keys = JSON.parse(process.env.AUTO_ERROR_FORWARD_KEYS ?? '{}') as Record<string, unknown>;
@@ -38,7 +39,9 @@ export default async (req: Request, context: { ip?: string }) => {
   const weekly = cleanWeekly(body);
   if (!machine || !weekly) return json({ error: 'not a weekly report' }, 400);
   const automatic = Array.isArray(body.autoErrors) ? body.autoErrors.slice(0, 50) : [];
-  if (automatic.length && !mayForwardAutomatic(machine, req.headers.get('x-hnmo-auto-error-key'))) {
+  const supplied = req.headers.get('x-hnmo-auto-error-key');
+  // The key the hub gave the computer (setup answer), or one the developer set in AUTO_ERROR_FORWARD_KEYS.
+  if (automatic.length && !(mayForwardWithSetting(machine, supplied) || await checkAutoErrorKey(hub(), machine, supplied))) {
     return json({ error: 'automatic report credential' }, 403);
   }
 

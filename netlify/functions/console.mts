@@ -9,7 +9,8 @@ import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../li
 import { sydneyDay } from '../lib/day.mts';
 import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type CloneRecord, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
 import { consolePage, notFoundPage } from '../lib/console-page.mts';
-import { readPackages, savePackages } from '../lib/licence-purchase.mts';
+import { purge } from '../lib/cdn.mts';
+import { amountText, bankSettings, cancelTransfer, listOrders, markTransferPaid, providers, readCatalogue, saveBankSettings, saveCatalogue, ShopError } from '../lib/shop.mts';
 import { licenceOrdersCsv, listLicenceOrders, parseLicenceOrderFilters } from '../lib/licence-orders.mts';
 
 interface Session { exp: number; d: string }
@@ -124,8 +125,14 @@ export default async (req: Request, context: { ip?: string }) => {
     }
     const results = listLicenceOrders(store, filters, Number(pageText));
     if (action === 'licence-orders') return json(await results);
-    const [packages, orderPage] = await Promise.all([readPackages(store), results]);
-    return url.searchParams.has('page') ? json({ packages, ...orderPage }) : json({ packages, orders: orderPage.orders });
+    const [packages, orderPage, shopOrders, bank, payWith] = await Promise.all([readCatalogue(store), results, listOrders(store), bankSettings(store), providers(store)]);
+    const shop = shopOrders.slice(0, 200).map(o => ({
+      id: o.id, at: o.at, package: o.package.id, name: o.package.name, machine: o.machine, toMachine: o.toMachine, provider: o.provider,
+      amount: amountText(o.amount, o.currency), status: o.status, transferCode: o.transferCode ?? null, licenceId: o.licenceId ?? null,
+      paidAt: o.paidAt ?? null, issuedAt: o.issuedAt ?? null, refundedAt: o.refundedAt ?? null, note: o.note ?? null,
+    }));
+    const extra = { shopOrders: shop, bank, providers: payWith };
+    return url.searchParams.has('page') ? json({ packages, ...orderPage, ...extra }) : json({ packages, orders: orderPage.orders, ...extra });
   }
 
   if (action === 'state' && req.method === 'GET') {
@@ -161,7 +168,27 @@ export default async (req: Request, context: { ip?: string }) => {
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
   if (action === 'licence-commerce') {
-    return await savePackages(store, body?.packages) ? json({ ok: true }) : json({ error: 'packages' }, 400);
+    if (!(await saveCatalogue(store, body?.packages))) return json({ error: 'packages' }, 400);
+    await purge('licence-packages');
+    return json({ ok: true });
+  }
+
+  // The owner's bank for transfers from a VietQR code (null clears it).
+  if (action === 'shop-bank') {
+    if (!(await saveBankSettings(store, body?.bank ?? null))) return json({ error: 'bank' }, 400);
+    await purge('licence-packages');
+    return json({ ok: true, bank: await bankSettings(store) });
+  }
+
+  // A bank transfer seen on the statement: the licence is signed and goes to the server like after a webhook.
+  if (action === 'shop-order-paid' || action === 'shop-order-cancel') {
+    try {
+      const order = action === 'shop-order-paid' ? await markTransferPaid(store, body.order) : await cancelTransfer(store, body.order);
+      return json({ ok: true, status: order.status, licenceId: order.licenceId ?? null });
+    } catch (error) {
+      if (error instanceof ShopError) return json({ error: error.code }, error.status);
+      throw error;
+    }
   }
 
   if (action === 'make-key') {
@@ -231,11 +258,13 @@ export default async (req: Request, context: { ip?: string }) => {
     if (tag && !/^\d+\.\d+\.\d+$/.test(tag)) return json({ error: 'The version is like 1.0.0.' }, 400);
     if (!tag) {
       await store.delete('config/latest');
+      await purge('latest');
       return json({ ok: true, latest: null });
     }
     // The download link may stay empty: the release's own HNMO.zip on the update storage is used then.
     const latest = { tag, url, notes: cleanText(body.notes, 4000), published: new Date().toISOString() };
     await store.setJSON('config/latest', latest);
+    await purge('latest');
     return json({ ok: true, latest });
   }
 

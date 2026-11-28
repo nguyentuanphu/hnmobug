@@ -6,6 +6,7 @@
 //   requests/<id>       licence requests (the one-time secret only as a hash)
 //   licences/<id>       licences issued here (withdrawn ones keep their date)
 //   keys/licence        the licence key (lib/keys.mts)
+//   shop-*, machine-licences/, pending-licences/, trials/, autoerror-keys/   the licence shop (lib/shop.mts)
 //   pending/<…>         bug reports waiting for the daily GitHub Action; done/<…> once filed
 //   devices/<id>        trusted browsers of the console
 //   limits/<day>/…      counters for the limits
@@ -147,6 +148,19 @@ export async function consoleCredentials(store: Store): Promise<ConsoleCredentia
 }
 
 export const tokenHash = (token: string): string => createHash('sha256').update(`hnmo-request|${token}`).digest('hex');
+
+/**
+ * The licence request a server proves it made: its id, the one-time secret only that server knows, and the same computer
+ * (or the id earlier HNMO versions used for it). Null when any of it doesn't match.
+ */
+export async function authenticRequest(store: Store, body: Record<string, unknown>, machine: string, legacy: string | null): Promise<RequestRecord | null> {
+  const id = typeof body.request === 'string' ? body.request.slice(0, 60) : '';
+  const token = typeof body.token === 'string' ? body.token : '';
+  const record = id ? (await store.get(`requests/${id}`, { type: 'json' })) as RequestRecord | null : null;
+  const given = Buffer.from(tokenHash(token));
+  const sameComputer = record !== null && (record.machine === machine || (legacy !== null && record.machine === legacy));
+  return record && sameComputer && given.length === record.tokenHash.length && timingSafeEqual(given, Buffer.from(record.tokenHash)) ? record : null;
+}
 export const ipHash = (ip: string): string => createHash('sha256').update((process.env.HUB_SALT || 'hnmo') + ip).digest('hex').slice(0, 16);
 
 export async function licenceKey(store: Store): Promise<StoredKey | null> {

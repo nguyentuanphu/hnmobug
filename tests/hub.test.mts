@@ -396,7 +396,8 @@ test('licence packages can be changed and orders reviewed only through the authe
   try {
     const path = '/c/' + process.env.CONSOLE_SLUG + '/api/licence-commerce';
     const headers = { 'X-Console': '1' };
-    const body = { packages: [{ id: 'test', name: 'Fictional', description: 'Fictional', currency: 'vnd', unitAmount: 150000 }] };
+    const body = { packages: [{ id: 'test', kind: 'plan', name: { en: 'Fictional', vi: 'Thử' }, description: { en: 'Fictional', vi: 'Thử' },
+      maxPlayers: 50, seasons: ['s6'], billing: 'year', durationDays: 366, prices: { vnd: 150000 }, order: 1, active: true }] };
     assert.equal((await consoleFn(post(path, body, headers), ctx)).status, 401);
     assert.equal((await consoleFn(new Request('https://hub.example' + path), ctx)).status, 401);
     await store.setJSON('devices/fictional', { id: 'fictional' });
@@ -405,7 +406,13 @@ test('licence packages can be changed and orders reviewed only through the authe
     assert.equal((await consoleFn(post(path, body, { Cookie }), ctx)).status, 403);
     assert.equal((await consoleFn(post(path, body, { ...headers, Cookie }), ctx)).status, 200);
     const response = await consoleFn(new Request('https://hub.example' + path, { headers: { Cookie } }), ctx);
-    assert.deepEqual(await response.json(), { packages: body.packages, orders: [] });
+    const answer = await response.json() as Record<string, unknown>;
+    assert.deepEqual(answer.packages, body.packages);
+    assert.deepEqual(answer.orders, []);
+    assert.deepEqual(answer.shopOrders, []);
+    assert.equal(answer.bank, null);
+    assert.equal((answer.providers as Record<string, boolean>).bank, false);
+    assert.equal((await consoleFn(post(path, { packages: [{ ...body.packages[0], prices: { eur: 5 } }] }, { ...headers, Cookie }), ctx)).status, 400);
   } finally {
     useStoreForTests(null);
   }
