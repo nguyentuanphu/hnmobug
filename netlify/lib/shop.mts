@@ -14,7 +14,7 @@
 import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { sydneyDay } from './day.mts';
 import { licenceKey, listJson, type LicenceRecord, type RequestRecord, type Store } from './hub.mts';
-import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from './keys.mts';
+import { makeLicenceKey, openText, privatePem, sealText, signLicence, type LicenceBody, type SealedText } from './keys.mts';
 
 export type Season = 's6' | 's9' | 'arena';
 export type Currency = 'vnd' | 'aud' | 'usd';
@@ -326,8 +326,48 @@ export async function saveBankSettings(store: Store, value: unknown): Promise<bo
   return true;
 }
 
+const payosKey = 'config/payos';
+
+/** PayOS keys: the site's settings first (PAYOS_*), else the ones the owner typed in the console (kept encrypted). */
+export async function payosFor(store: Store, env: NodeJS.ProcessEnv = process.env): Promise<PayosSettings | null> {
+  const fromEnv = payosSettings(env);
+  if (fromEnv) return fromEnv;
+  try {
+    const sealed = await store.get(payosKey, { type: 'json' }) as SealedText | null;
+    if (!sealed) return null;
+    return payosSettings(JSON.parse(openText(sealed)) as NodeJS.ProcessEnv);
+  } catch {
+    return null;
+  }
+}
+
+/** Saves (or, with null, removes) the PayOS keys typed in the console; the keys are never shown again. */
+export async function savePayos(store: Store, value: unknown): Promise<boolean> {
+  if (value === null) {
+    await store.delete(payosKey);
+    return true;
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const v = value as Record<string, unknown>;
+  const settings = payosSettings({ PAYOS_CLIENT_ID: String(v.clientId ?? ''), PAYOS_API_KEY: String(v.apiKey ?? ''), PAYOS_CHECKSUM_KEY: String(v.checksumKey ?? '') });
+  if (!settings || [settings.clientId, settings.apiKey, settings.checksumKey].some(x => x.length > 200 || /\s/.test(x))) return false;
+  await store.setJSON(payosKey, sealText(JSON.stringify({ PAYOS_CLIENT_ID: settings.clientId, PAYOS_API_KEY: settings.apiKey, PAYOS_CHECKSUM_KEY: settings.checksumKey })));
+  return true;
+}
+
+/** What the console shows about the card and PayOS keys: whether they work and where they come from, never the keys. */
+export async function paymentStatus(store: Store, env: NodeJS.ProcessEnv = process.env) {
+  const stripe = stripeSettings(env);
+  const payos = await payosFor(store, env);
+  return {
+    stripe: stripe ? (stripe.live ? 'live' : 'test') : null,
+    payos: payos ? (payosSettings(env) ? 'site' : 'console') : null,
+    payosClientTail: payos ? payos.clientId.slice(-4) : null,
+  };
+}
+
 export const providers = async (store: Store, env: NodeJS.ProcessEnv = process.env) =>
-  ({ stripe: !!stripeSettings(env), payos: !!payosSettings(env), bank: !!(await bankSettings(store)) });
+  ({ stripe: !!stripeSettings(env), payos: !!(await payosFor(store, env)), bank: !!(await bankSettings(store)) });
 
 /** A bank transfer stays open this long; then it expires. */
 export const TRANSFER_DAYS = 7;
@@ -414,7 +454,7 @@ export async function startCheckout(store: Store, input: CheckoutInput, send: ty
   if (!provider) throw new ShopError('provider', 400);
   if ((provider === 'payos' || provider === 'bank') && currency !== 'vnd') throw new ShopError('currency', 400);
   const stripe = stripeSettings(env);
-  const payos = payosSettings(env);
+  const payos = await payosFor(store, env);
   const bank = provider === 'bank' ? await bankSettings(store) : null;
   if ((provider === 'stripe' && !stripe) || (provider === 'payos' && !payos) || (provider === 'bank' && !bank)) throw new ShopError('offline', 503);
 

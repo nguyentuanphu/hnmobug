@@ -61,7 +61,8 @@ export function consolePage(base: string): string {
 const BASE = ${JSON.stringify(base)};
 const T = {
   en: { console:'HNMO console', pendingRequests:'Pending licence requests', pendingReports:'Pending bug reports', menu:'Sections', trustHint:'Browser trust renews for 365 days each time you sign in. Remove a browser to end its trust and sign it out.', active:'Active', expired:'Expired', unbound:'Any computer', noExpiry:'No expiry', setupTitle:'First use: set your sign-in', setupHint:'Paste the hub key (HUB_KEY from the site settings) to prove it is you, and choose the console password. This is asked only once.', hubKey:'Hub key (HUB_KEY)', newPassword:'New password (12 characters or more)', again:'The password again', setupSave:'Save', differ:'The two passwords differ or are shorter than 12 characters.', appTitle:'Add the console to your authenticator app', appHint:'In Google Authenticator or Microsoft Authenticator: add an account, choose "Enter a setup key", name it HNMO console, and type the key below (time based). Then type the 6-digit code it shows.', appKey:'Key:', appLink:'or open this link on the phone', password:'Password', code:'6-digit code from your authenticator app (new browser)', signIn:'Sign in', wrong:'Wrong password or code.', wait:'Too many tries; wait an hour.', signOut:'Sign out',
-    commerce:'Licence packages', orderReview:'Older test orders', commerceHint:'Fill in the prices: "prices": {"vnd": whole đồng, "aud": cents, "usd": cents}. A package without a price is not sold; the trial is free. Saving updates the License page of every server. Licences are signed by themselves once a payment is confirmed.', shopOrders:'Orders', bankTitle:'Bank transfer (VietQR)', bankHint:'Your account for ordinary transfers: the server shows its VietQR code with the amount and the order note. Mark an order paid when the money is on your statement; unpaid ones end after 7 days.', bankBin:'Bank (NAPAS BIN, 6 digits)', bankAccount:'Account number', bankName:'Account name', bankPrefix:'Note starts with', bankClear:'Remove', markPaid:'Mark as paid', cancelOrder:'Cancel', confirmPaid:'Did you see this amount with this note on your bank statement?', noShopOrders:'No orders yet.', 'st-pending':'Waiting for payment', 'st-awaiting-transfer':'Waiting for the transfer', 'st-paid':'Paid', 'st-issued':'Licence issued', 'st-refunded':'Refunded · withdrawn', 'st-failed':'Paid · nothing to change', 'st-cancelled':'Cancelled', 'st-expired':'Ended unpaid', invalidBank:'Check the bank: 6-digit BIN, account number, the account name in capitals.', invalidPackages:'Could not save. Review the package fields and make sure each ID is unique.', commerceUnavailable:'Could not load licence packages.', paid:'Test payment verified', review:'Refund or dispute — review required',
+    kindPlan:'Plan', kindAddon:'Add-on', kindTrial:'Free trial', bMonth:'Monthly', bYear:'Yearly', bLifetime:'One-off, lifetime', bOnce:'One-off', aPlayers:'More players', aUpgrade:'Upgrade to a plan', aMove:'Move to another computer', aSecond:'Second computer', pkgId:'ID (letters, digits, dashes)', pkgKind:'Kind', pkgName:'Name', pkgDesc:'Description', pkgPlayers:'Players at once', pkgBilling:'Payment', pkgOrder:'Order (small first)', seasonsLabel:'Seasons:', 'season-s6':'Season 6.3', 'season-s9':'Season 9', 'season-arena':'Arena', pkgActive:'On sale', pkgHighlight:'Highlighted', addonKind:'Add-on does', addPlayers:'Extra players', upgradeTo:'Upgrades to', priceVnd:'Price VND (whole đồng)', priceAud:'Price AUD (dollars, e.g. 19.90)', priceUsd:'Price USD (dollars, e.g. 12.50)', addPackage:'Add a package', removePackage:'Remove this package', removePackageAsk:'Remove this package? It is gone when you press Save.', stripeLive:'Card payments: ready (live keys found).', stripeTest:'Card payments: test keys found (no real money).', stripeOff:'Card payments: no Stripe keys yet (set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET in the site settings, then deploy).', webhookIs:'Webhook address:', stripeMin:'Stripe does not take a card payment below about 0.50 AUD or USD, so a test with real money cannot be 1 or 2 cents.', payosOn:'PayOS keys saved', payosOff:'PayOS: no keys yet, the PayOS button stays hidden', payosSite:'PayOS keys are set in the site settings', payosHint:'Paste the three keys from your PayOS channel (Client ID, API Key, Checksum Key) and save. They are stored encrypted and never shown again. Set the webhook address below in PayOS.', invalidPayos:'Could not save the PayOS keys. Check the three values.', pickBank:'Pick the bank',
+    commerce:'Licence packages', orderReview:'Older test orders', commerceHint:'Open a package to edit it. Fill in a price in any currency; a package with no price is not sold, and the trial is free. Saving updates the License page of every server. Licences are signed by themselves once a payment is confirmed.', shopOrders:'Orders', bankTitle:'Bank transfer (VietQR)', bankHint:'Your account for ordinary transfers: the server shows its VietQR code with the amount and the order note. Mark an order paid when the money is on your statement; unpaid ones end after 7 days.', bankBin:'Bank', bankAccount:'Account number', bankName:'Account name', bankPrefix:'Note starts with', bankClear:'Remove', markPaid:'Mark as paid', cancelOrder:'Cancel', confirmPaid:'Did you see this amount with this note on your bank statement?', noShopOrders:'No orders yet.', 'st-pending':'Waiting for payment', 'st-awaiting-transfer':'Waiting for the transfer', 'st-paid':'Paid', 'st-issued':'Licence issued', 'st-refunded':'Refunded · withdrawn', 'st-failed':'Paid · nothing to change', 'st-cancelled':'Cancelled', 'st-expired':'Ended unpaid', invalidBank:'Check the bank: 6-digit BIN, account number, the account name in capitals.', invalidPackages:'Could not save. Review the package fields and make sure each ID is unique.', commerceUnavailable:'Could not load licence packages.', paid:'Test payment verified', review:'Refund or dispute — review required',
     orderStatus:'Status', allOrders:'All statuses', orderFrom:'From date (Sydney)', orderTo:'To date (Sydney)',
     pendingOrder:'Awaiting test payment', filterOrders:'Apply filters', resetOrders:'Clear filters', exportOrders:'Download filtered CSV',
     ordersLoading:'Loading test orders…', ordersUnavailable:'Could not load test orders.', ordersInvalid:'Enter a valid Sydney date range.',
@@ -74,7 +75,8 @@ const T = {
     host:'Host', system:'System', game:'Game', place:'IP and country', autoWithdrawn:'withdrawn by itself', computers:'Computers seen', cloneFlagged:'clone flagged (passive)', manyOk:'more computers allowed', sentTimes:'times sent', oldId:'old id',
     noMuName:'(unnamed server)', noHost:'host not filled in', markTest:'It is a test machine', markReal:'It is a real host', allTest:'Mark every real host here as a test machine', allTestAsk:'Mark all these as your test machines?', details:'Details', firstSetup:'First setup', noReport:'no weekly report yet', latestTitle:'Newest HNMO release', latestHint:'The version HNMO servers are offered (their admin panel shows it with an Update button). Build it first: the package workflow uploads each version to the update storage. Empty version: none offered. The download link may stay empty (the version’s HNMO.zip on the update storage).', latestTag:'Version (1.0.0)', latestUrl:'Download link of the whole folder (optional)', latestNotes:'Notes', save:'Save', machineId:'Machine id', plugins:'plug-ins', reportsSent:'bug reports', none2:'No test machines.' },
   vi: { console:'Quản lý HNMO', pendingRequests:'Yêu cầu giấy phép đang chờ', pendingReports:'Báo lỗi đang chờ', menu:'Các mục', trustHint:'Mỗi lần đăng nhập, trình duyệt được tin cậy thêm 365 ngày. Xóa một trình duyệt để hủy tin cậy và đăng xuất trình duyệt đó.', active:'Đang hoạt động', expired:'Đã hết hạn', unbound:'Bất kỳ máy nào', noExpiry:'Không hết hạn', setupTitle:'Lần đầu: đặt cách đăng nhập', setupHint:'Dán khoá hub (HUB_KEY trong cài đặt site) để chứng minh là anh, rồi chọn mật khẩu khu quản lý. Chỉ hỏi một lần.', hubKey:'Khoá hub (HUB_KEY)', newPassword:'Mật khẩu mới (12 ký tự trở lên)', again:'Nhập lại mật khẩu', setupSave:'Lưu', differ:'Hai mật khẩu khác nhau hoặc ngắn hơn 12 ký tự.', appTitle:'Thêm khu quản lý vào app xác thực', appHint:'Trong Google Authenticator hoặc Microsoft Authenticator: thêm tài khoản, chọn "Nhập khoá thiết lập", đặt tên HNMO console, gõ khoá bên dưới (theo thời gian). Rồi gõ mã 6 số app hiện ra.', appKey:'Khoá:', appLink:'hoặc mở link này trên điện thoại', password:'Mật khẩu', code:'Mã 6 số từ app xác thực (trình duyệt mới)', signIn:'Đăng nhập', wrong:'Sai mật khẩu hoặc mã.', wait:'Thử quá nhiều lần; đợi một giờ.', signOut:'Đăng xuất',
-    commerce:'Gói giấy phép', orderReview:'Đơn thử nghiệm cũ', commerceHint:'Điền giá: "prices": {"vnd": số đồng, "aud": cent, "usd": cent}. Gói không có giá thì không bán; gói dùng thử miễn phí. Lưu xong, trang License của mọi server cập nhật theo. Giấy phép tự được ký khi thanh toán được xác nhận.', shopOrders:'Đơn hàng', bankTitle:'Chuyển khoản ngân hàng (VietQR)', bankHint:'Tài khoản nhận chuyển khoản thường: server hiện mã VietQR có sẵn số tiền và nội dung của đơn. Bấm "Đã nhận tiền" khi thấy tiền trong sao kê; đơn chưa trả quá 7 ngày tự hết hạn.', bankBin:'Ngân hàng (mã BIN NAPAS, 6 số)', bankAccount:'Số tài khoản', bankName:'Tên chủ tài khoản', bankPrefix:'Nội dung bắt đầu bằng', bankClear:'Xoá', markPaid:'Đã nhận tiền', cancelOrder:'Huỷ', confirmPaid:'Anh đã thấy đúng số tiền với nội dung này trong sao kê chưa?', noShopOrders:'Chưa có đơn nào.', 'st-pending':'Chờ thanh toán', 'st-awaiting-transfer':'Chờ chuyển khoản', 'st-paid':'Đã trả tiền', 'st-issued':'Đã cấp giấy phép', 'st-refunded':'Đã hoàn tiền · đã thu hồi', 'st-failed':'Đã trả · không có gì để đổi', 'st-cancelled':'Đã huỷ', 'st-expired':'Hết hạn, chưa trả', invalidBank:'Kiểm tra ngân hàng: mã BIN 6 số, số tài khoản, tên chủ tài khoản viết hoa.', invalidPackages:'Không lưu được. Kiểm tra các trường và đảm bảo mỗi mã gói là duy nhất.', commerceUnavailable:'Không tải được các gói giấy phép.', paid:'Đã xác minh thanh toán thử', review:'Có hoàn tiền hoặc tranh chấp, cần kiểm tra',
+    kindPlan:'Gói', kindAddon:'Mua thêm', kindTrial:'Dùng thử miễn phí', bMonth:'Theo tháng', bYear:'Theo năm', bLifetime:'Mua một lần, vĩnh viễn', bOnce:'Mua một lần', aPlayers:'Thêm người chơi', aUpgrade:'Nâng lên gói khác', aMove:'Chuyển sang máy khác', aSecond:'Máy thứ hai', pkgId:'Mã (chữ, số, gạch ngang)', pkgKind:'Loại', pkgName:'Tên', pkgDesc:'Mô tả', pkgPlayers:'Người chơi cùng lúc', pkgBilling:'Cách trả tiền', pkgOrder:'Thứ tự (nhỏ trước)', seasonsLabel:'Season:', 'season-s6':'Season 6.3', 'season-s9':'Season 9', 'season-arena':'Arena', pkgActive:'Đang bán', pkgHighlight:'Nổi bật', addonKind:'Mua thêm để', addPlayers:'Số người chơi thêm', upgradeTo:'Nâng lên gói', priceVnd:'Giá VND (số đồng)', priceAud:'Giá AUD (đô la, vd 19.90)', priceUsd:'Giá USD (đô la, vd 12.50)', addPackage:'Thêm gói', removePackage:'Xoá gói này', removePackageAsk:'Xoá gói này? Gói sẽ mất khi anh bấm Lưu.', stripeLive:'Thanh toán thẻ: sẵn sàng (đã có khoá thật).', stripeTest:'Thanh toán thẻ: đang dùng khoá thử (không mất tiền thật).', stripeOff:'Thanh toán thẻ: chưa có khoá Stripe (đặt STRIPE_SECRET_KEY và STRIPE_WEBHOOK_SECRET trong cài đặt site rồi deploy).', webhookIs:'Địa chỉ webhook:', stripeMin:'Stripe không nhận thanh toán thẻ dưới khoảng 0,50 AUD hoặc USD, nên thử bằng tiền thật không thể chỉ 1-2 cent.', payosOn:'Đã lưu khoá PayOS', payosOff:'PayOS: chưa có khoá, nút PayOS đang ẩn', payosSite:'Khoá PayOS đang đặt trong cài đặt site', payosHint:'Dán ba khoá từ kênh PayOS của anh (Client ID, API Key, Checksum Key) rồi lưu. Khoá được lưu mã hoá và không hiện lại. Điền địa chỉ webhook bên dưới vào PayOS.', invalidPayos:'Không lưu được khoá PayOS. Kiểm tra lại ba giá trị.', pickBank:'Chọn ngân hàng',
+    commerce:'Gói giấy phép', orderReview:'Đơn thử nghiệm cũ', commerceHint:'Bấm vào từng gói để sửa. Điền giá ở tiền tệ nào cũng được; gói không có giá thì không bán, gói dùng thử miễn phí. Lưu xong, trang License của mọi server cập nhật theo. Giấy phép tự được ký khi thanh toán được xác nhận.', shopOrders:'Đơn hàng', bankTitle:'Chuyển khoản ngân hàng (VietQR)', bankHint:'Tài khoản nhận chuyển khoản thường: server hiện mã VietQR có sẵn số tiền và nội dung của đơn. Bấm "Đã nhận tiền" khi thấy tiền trong sao kê; đơn chưa trả quá 7 ngày tự hết hạn.', bankBin:'Ngân hàng', bankAccount:'Số tài khoản', bankName:'Tên chủ tài khoản', bankPrefix:'Nội dung bắt đầu bằng', bankClear:'Xoá', markPaid:'Đã nhận tiền', cancelOrder:'Huỷ', confirmPaid:'Anh đã thấy đúng số tiền với nội dung này trong sao kê chưa?', noShopOrders:'Chưa có đơn nào.', 'st-pending':'Chờ thanh toán', 'st-awaiting-transfer':'Chờ chuyển khoản', 'st-paid':'Đã trả tiền', 'st-issued':'Đã cấp giấy phép', 'st-refunded':'Đã hoàn tiền · đã thu hồi', 'st-failed':'Đã trả · không có gì để đổi', 'st-cancelled':'Đã huỷ', 'st-expired':'Hết hạn, chưa trả', invalidBank:'Kiểm tra ngân hàng: mã BIN 6 số, số tài khoản, tên chủ tài khoản viết hoa.', invalidPackages:'Không lưu được. Kiểm tra các trường và đảm bảo mỗi mã gói là duy nhất.', commerceUnavailable:'Không tải được các gói giấy phép.', paid:'Đã xác minh thanh toán thử', review:'Có hoàn tiền hoặc tranh chấp, cần kiểm tra',
     orderStatus:'Trạng thái', allOrders:'Mọi trạng thái', orderFrom:'Từ ngày (giờ Sydney)', orderTo:'Đến ngày (giờ Sydney)',
     pendingOrder:'Đang chờ thanh toán thử', filterOrders:'Lọc đơn', resetOrders:'Xóa bộ lọc', exportOrders:'Tải CSV theo bộ lọc',
     ordersLoading:'Đang tải đơn thử nghiệm…', ordersUnavailable:'Không tải được đơn thử nghiệm.', ordersInvalid:'Nhập khoảng ngày hợp lệ theo giờ Sydney.',
@@ -259,16 +261,95 @@ const VIEWS = {
   },
   commerce() {
     const panel = el('div', { class:'card', 'aria-live':'polite' });
-    api('licence-commerce?page=1').then(({ packages, orders, hasMore, shopOrders, bank }) => {
-      const input = el('textarea', { id:'package-catalogue', rows:'16', spellcheck:'false', on:{ input:() => { editing = true; } } });
-      input.value = JSON.stringify(packages, null, 2);
+    const SEASONS = ['s6', 's9', 'arena'];
+    const BANKS = [['970436','Vietcombank'],['970407','Techcombank'],['970415','VietinBank'],['970418','BIDV'],['970405','Agribank'],['970422','MB Bank'],['970416','ACB'],['970432','VPBank'],['970423','TPBank'],['970403','Sacombank'],['970437','HDBank'],['970441','VIB'],['970443','SHB'],['970431','Eximbank'],['970426','MSB'],['970448','OCB'],['970440','SeABank'],['970449','LPBank'],['970454','Bản Việt (BVBank)'],['970429','SCB'],['970452','KienlongBank'],['970409','Bac A Bank'],['970425','ABBANK'],['970428','Nam A Bank'],['970433','VietBank'],['970427','VietABank'],['970412','PVcomBank'],['970419','NCB'],['970430','PGBank'],['970400','Saigonbank'],['970406','Vikki Bank (DongA Bank)'],['970424','Shinhan Bank'],['970458','UOB'],['970457','Woori Bank'],['963388','Timo'],['546034','CAKE by VPBank'],['546035','Ubank by VPBank']];
+    const cents = text => { const n = Math.round(parseFloat(String(text).replace(',', '.')) * 100); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const both = (vi, en) => { vi = vi.trim(); en = en.trim(); return { vi:vi || en, en:en || vi }; };
+    const dollars = value => value ? (value / 100).toFixed(2) : '';
+    const field = (label, input) => el('label', {}, label, input);
+    const choice = (options, value) => { const s = el('select'); for (const [v, text] of options) s.append(el('option', { value:v, text })); s.value = value; return s; };
+    const check = (label, on) => { const i = el('input', { type:'checkbox' }); i.checked = !!on; return { i, node:el('label', { class:'row' }, i, ' ' + label) }; };
+
+    const packageCard = (p, planIds, onRemove) => {
+      const f = {
+        id: el('input', { maxlength:'40', value:p.id }),
+        kind: choice([['plan', t('kindPlan')], ['addon', t('kindAddon')], ['trial', t('kindTrial')]], p.kind),
+        nameVi: el('input', { maxlength:'80', value:p.name?.vi ?? '' }), nameEn: el('input', { maxlength:'80', value:p.name?.en ?? '' }),
+        descVi: el('textarea', { rows:'2', maxlength:'600' }), descEn: el('textarea', { rows:'2', maxlength:'600' }),
+        players: el('input', { type:'number', min:'1', value:String(p.maxPlayers ?? 50) }),
+        billing: choice([['month', t('bMonth')], ['year', t('bYear')], ['lifetime', t('bLifetime')], ['once', t('bOnce')]], p.billing),
+        vnd: el('input', { inputmode:'numeric', placeholder:'0', value:p.prices?.vnd ? String(p.prices.vnd) : '' }),
+        aud: el('input', { inputmode:'decimal', placeholder:'0.00', value:dollars(p.prices?.aud) }),
+        usd: el('input', { inputmode:'decimal', placeholder:'0.00', value:dollars(p.prices?.usd) }),
+        order: el('input', { type:'number', value:String(p.order ?? 0) }),
+        addon: choice([['players', t('aPlayers')], ['upgrade', t('aUpgrade')], ['move', t('aMove')], ['second-machine', t('aSecond')]], p.addon ?? 'players'),
+        addPlayers: el('input', { type:'number', min:'1', value:String(p.addPlayers ?? 10) }),
+        upgradeTo: choice(planIds.map(id => [id, id]), p.upgradeTo ?? planIds[0] ?? ''),
+      };
+      f.descVi.value = p.description?.vi ?? ''; f.descEn.value = p.description?.en ?? '';
+      const seasons = SEASONS.map(s => ({ s, ...check(t('season-' + s), (p.seasons ?? []).includes(s)) }));
+      const active = check(t('pkgActive'), p.active !== false), highlight = check(t('pkgHighlight'), p.highlight === true);
+      const addonBox = el('div', { class:'grid' }, field(t('addonKind'), f.addon), field(t('addPlayers'), f.addPlayers), field(t('upgradeTo'), f.upgradeTo));
+      const seasonBox = el('div', { class:'row' }, el('span', { text:t('seasonsLabel') + ' ' }), ...seasons.map(x => x.node));
+      const sync = () => {
+        const addon = f.kind.value === 'addon';
+        addonBox.hidden = !addon;
+        f.addPlayers.parentElement.hidden = !addon || f.addon.value !== 'players';
+        f.upgradeTo.parentElement.hidden = !addon || f.addon.value !== 'upgrade';
+        f.players.parentElement.hidden = addon && f.addon.value !== 'second-machine';
+        seasonBox.hidden = addon;
+        f.billing.parentElement.hidden = f.kind.value === 'trial' || addon;
+      };
+      const title = el('summary', { text:(p.name?.[lang] ?? p.name?.en ?? p.id) + ' · ' + p.id });
+      const node = el('details', { class:'card' }, title,
+        el('div', { class:'grid' }, field(t('pkgId'), f.id), field(t('pkgKind'), f.kind), field(t('pkgName') + ' (VI)', f.nameVi), field(t('pkgName') + ' (EN)', f.nameEn)),
+        el('div', { class:'grid' }, field(t('pkgDesc') + ' (VI)', f.descVi), field(t('pkgDesc') + ' (EN)', f.descEn)),
+        el('div', { class:'grid' }, field(t('pkgPlayers'), f.players), field(t('pkgBilling'), f.billing), field(t('pkgOrder'), f.order)),
+        seasonBox, addonBox,
+        el('div', { class:'grid' }, field(t('priceVnd'), f.vnd), field(t('priceAud'), f.aud), field(t('priceUsd'), f.usd)),
+        el('div', { class:'row' }, active.node, highlight.node, el('button', { type:'button', class:'danger', text:t('removePackage'), on:{ click:() => { if (confirm(t('removePackageAsk'))) onRemove(); } } })));
+      f.kind.addEventListener('change', sync); f.addon.addEventListener('change', sync); sync();
+      const read = () => {
+        const kind = f.kind.value;
+        const out = { ...p, id:f.id.value.trim(), kind, name:both(f.nameVi.value, f.nameEn.value), description:both(f.descVi.value, f.descEn.value),
+          order:Math.round(Number(f.order.value) || 0), active:active.i.checked, prices:{} };
+        const vnd = Math.round(Number(f.vnd.value) || 0); if (vnd > 0) out.prices.vnd = vnd;
+        const aud = cents(f.aud.value); if (aud) out.prices.aud = aud;
+        const usd = cents(f.usd.value); if (usd) out.prices.usd = usd;
+        if (highlight.i.checked) out.highlight = true; else delete out.highlight;
+        out.seasons = kind === 'addon' ? (p.seasons ?? []) : seasons.filter(x => x.i.checked).map(x => x.s);
+        out.billing = kind === 'trial' ? 'once' : kind === 'addon' ? 'lifetime' : f.billing.value;
+        out.durationDays = out.billing === 'month' ? 31 : out.billing === 'year' ? 366 : (kind === 'trial' ? (p.durationDays ?? 14) : null);
+        delete out.addon; delete out.addPlayers; delete out.upgradeTo; delete out.maxPlayers;
+        if (kind === 'addon') {
+          out.addon = f.addon.value;
+          if (out.addon === 'players') out.addPlayers = Math.round(Number(f.addPlayers.value) || 0);
+          if (out.addon === 'second-machine') out.maxPlayers = Math.round(Number(f.players.value) || 0);
+          if (out.addon === 'upgrade') out.upgradeTo = f.upgradeTo.value;
+        } else out.maxPlayers = Math.round(Number(f.players.value) || 0);
+        return out;
+      };
+      return { node, read };
+    };
+
+    api('licence-commerce?page=1').then(({ packages, orders, hasMore, shopOrders, bank, payStatus }) => {
+      const cards = [];
+      const packageList = el('div', {});
+      const planIds = packages.filter(p => p.kind === 'plan').map(p => p.id);
+      const addCard = p => { const c = packageCard(p, planIds, () => { cards.splice(cards.indexOf(c), 1); c.node.remove(); editing = true; }); cards.push(c); packageList.append(c.node); return c; };
+      packages.forEach(addCard);
       const message = el('p', { role:'status' });
       const save = el('button', { type:'submit', class:'primary', text:t('save') });
-      const form = el('form', { on:{ submit:async event => {
+      const add = el('button', { type:'button', text:t('addPackage'), on:{ click:() => {
+        let n = cards.length + 1; while (cards.some(c => c.read().id === 'goi-' + n)) n++;
+        const c = addCard({ id:'goi-' + n, kind:'plan', name:{ vi:'', en:'' }, description:{ vi:'', en:'' }, maxPlayers:50, seasons:['s6'], billing:'month', durationDays:31, prices:{}, order:(cards.length + 1) * 10, active:true });
+        c.node.open = true; editing = true;
+      } } });
+      const form = el('form', { on:{ input:() => { editing = true; }, submit:async event => {
         event.preventDefault();
         save.disabled = true;
         try {
-          await api('licence-commerce', { packages:JSON.parse(input.value) });
+          await api('licence-commerce', { packages:cards.map(c => c.read()) });
           editing = false;
           message.textContent = t('saved');
         } catch {
@@ -276,10 +357,32 @@ const VIEWS = {
         } finally {
           save.disabled = false;
         }
-      } } }, el('label', { for:'package-catalogue', text:t('commerce') }), el('p', { text:t('commerceHint') }), input, save, message);
+      } } }, el('h2', { text:t('commerce') }), el('p', { text:t('commerceHint') }), packageList, el('p', { class:'row' }, save, add), message);
 
+
+      const status = payStatus ?? {};
+      const stripeLine = el('p', { class:'muted', text:status.stripe === 'live' ? t('stripeLive') : status.stripe === 'test' ? t('stripeTest') : t('stripeOff') });
+      const stripeBox = el('div', {}, el('h2', { text:'Stripe' }), stripeLine, el('p', { class:'muted', text:t('webhookIs') + ' ' + location.origin + '/api/licence-stripe' }), el('p', { class:'muted', text:t('stripeMin') }));
+
+      const payosFields = { clientId:el('input', { type:'password', autocomplete:'off' }), apiKey:el('input', { type:'password', autocomplete:'off' }), checksumKey:el('input', { type:'password', autocomplete:'off' }) };
+      const payosMessage = el('p', { role:'status' });
+      const sendPayos = async value => {
+        try { const r = await api('shop-payos', { payos:value }); payosMessage.textContent = t('saved') + ' · ' + (r.payStatus?.payos ? t('payosOn') : t('payosOff')); for (const i of Object.values(payosFields)) i.value = ''; } catch { payosMessage.textContent = t('invalidPayos'); }
+      };
+      const payosState = status.payos === 'site' ? t('payosSite') : status.payos === 'console' ? t('payosOn') + ' (…' + status.payosClientTail + ')' : t('payosOff');
+      const payosBox = el('form', { on:{ submit:event => { event.preventDefault(); sendPayos(Object.fromEntries(Object.entries(payosFields).map(([k, i]) => [k, i.value.trim()]))); } } },
+        el('h2', { text:'PayOS' }), el('p', { class:'muted', text:t('payosHint') }), el('p', { text:payosState }),
+        el('p', { class:'muted', text:t('webhookIs') + ' ' + location.origin + '/api/licence-payos' }),
+        el('div', { class:'grid' }, field('Client ID', payosFields.clientId), field('API Key', payosFields.apiKey), field('Checksum Key', payosFields.checksumKey)),
+        el('p', { class:'row' }, el('button', { type:'submit', class:'primary', text:t('save') }), el('button', { type:'button', text:t('bankClear'), on:{ click:() => sendPayos(null) } })), payosMessage);
+
+      const bankSelect = el('select');
+      bankSelect.append(el('option', { value:'', text:t('pickBank') }));
+      const list2 = BANKS.slice();
+      if (bank?.bin && !list2.some(b => b[0] === bank.bin)) list2.push([bank.bin, 'BIN ' + bank.bin]);
+      for (const [bin, name] of list2) bankSelect.append(el('option', { value:bin, text:name + ' (' + bin + ')' }));
+      bankSelect.value = bank?.bin ?? '';
       const fields = {
-        bin: el('input', { inputmode:'numeric', maxlength:'6', value:bank?.bin ?? '' }),
         account: el('input', { maxlength:'19', value:bank?.account ?? '' }),
         accountName: el('input', { maxlength:'50', value:bank?.accountName ?? '' }),
         notePrefix: el('input', { maxlength:'8', value:bank?.notePrefix ?? 'HNMO' }),
@@ -288,10 +391,10 @@ const VIEWS = {
       const sendBank = async value => {
         try { await api('shop-bank', { bank:value }); bankMessage.textContent = t('saved'); } catch { bankMessage.textContent = t('invalidBank'); }
       };
-      const bankForm = el('form', { on:{ submit:event => { event.preventDefault(); sendBank(Object.fromEntries(Object.entries(fields).map(([k, i]) => [k, i.value]))); } } },
+      const bankForm = el('form', { on:{ submit:event => { event.preventDefault(); sendBank({ bin:bankSelect.value, ...Object.fromEntries(Object.entries(fields).map(([k, i]) => [k, i.value])) }); } } },
         el('h2', { text:t('bankTitle') }), el('p', { class:'muted', text:t('bankHint') }),
-        el('div', { class:'grid' }, el('label', {}, t('bankBin'), fields.bin), el('label', {}, t('bankAccount'), fields.account),
-          el('label', {}, t('bankName'), fields.accountName), el('label', {}, t('bankPrefix'), fields.notePrefix)),
+        el('div', { class:'grid' }, field(t('bankBin'), bankSelect), field(t('bankAccount'), fields.account),
+          field(t('bankName'), fields.accountName), field(t('bankPrefix'), fields.notePrefix)),
         el('p', { class:'row' }, el('button', { type:'submit', class:'primary', text:t('save') }),
           el('button', { type:'button', text:t('bankClear'), on:{ click:() => sendBank(null) } })), bankMessage);
 
@@ -311,8 +414,8 @@ const VIEWS = {
         }
         list.append(item);
       }
-      panel.replaceChildren(form, bankForm, el('h2', { text:t('shopOrders') }), list, el('h2', { text:t('orderReview') }), orderResults({ orders, hasMore }));
-    }).catch(() => { panel.textContent = t('commerceUnavailable'); });
+      panel.replaceChildren(form, stripeBox, payosBox, bankForm, el('h2', { text:t('shopOrders') }), list, el('h2', { text:t('orderReview') }), orderResults({ orders, hasMore }));
+    }).catch((error) => { console.error(error); panel.textContent = t('commerceUnavailable'); });
     return panel;
   },
   licences() {
