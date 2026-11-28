@@ -16,7 +16,14 @@ The hub has a switch (console, Packages page, "One folder per computer"), **off*
 
 ## What the hub does with it
 - `limit-folders/<machine>`: folder ids seen in the last 14 days; more than the licence's `folders` (1 on the free build)
-  is flagged.
+  is flagged. The hub retains the 64 latest distinct folder ids and shows the count as a lower bound when that
+  sample is full. The hub uses the current signed licence in its records when it knows the reported licence ID.
+  It updates that entitlement on accepted setup or weekly reports and never uses a licence bound to a different
+  computer. An observation expires at exactly 14 days since its last sighting.
 - `limit-addresses/<hash>`: free computers seen from one public address in the last 14 days; more than one is flagged.
   The address is stored only as a salted hash and never shown.
-- Flags are for the owner to read in the console; the owner can set one aside until it grows. Nothing is blocked by the hub.
+- Flags are for the owner to read in the console; the owner can set one aside for the observed members and allowance. A different
+  member set or folder entitlement can bring it back even when the count stays the same. Nothing is blocked by the hub.
+
+The hub only sees accepted setup and weekly reports. Their existing rate limits and reporting schedules still apply.
+Update-check returns the switch on success and does not record a folder.
