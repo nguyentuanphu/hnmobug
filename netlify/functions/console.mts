@@ -4,7 +4,7 @@
 // API under /c/<slug>/api/: status, setup, login, logout, state, make-key, issue, decline, revoke,
 // forget-device, mark (a test machine or a real host), latest (the newest release HNMO servers are told about). Every change needs the session cookie and the X-Console header (no cross-site requests).
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_HOURS, TRUST_DAYS } from '../lib/auth.mts';
+import { base32Encode, checkPassword, checkTotp, cookie, cookies, hashPassword, sign, unsign, SESSION_DAYS, TRUST_DAYS } from '../lib/auth.mts';
 import { makeLicenceKey, privatePem, signLicence, type LicenceBody } from '../lib/keys.mts';
 import { sydneyDay } from '../lib/day.mts';
 import { clientIp, consoleCredentials, countOnce, hub, ipHash, json, licenceKey, listJson, type CloneRecord, type ConsoleCredentials, type Device, type HostRecord, type LicenceRecord, type MachineMark, type RequestRecord, type SeenRecord, type SetupRecord, type Store, isTestMachine } from '../lib/hub.mts';
@@ -95,7 +95,7 @@ export default async (req: Request, context: { ip?: string }) => {
     }
     const now = Date.now();
     const trustSeconds = TRUST_DAYS * 86400;
-    const sessionSeconds = SESSION_HOURS * 3600;
+    const sessionSeconds = SESSION_DAYS * 86400;
     headers.append('Set-Cookie', cookie('hnmo_device', sign({ exp: now + trustSeconds * 1000, d: device }), base, trustSeconds));
     headers.append('Set-Cookie', cookie('hnmo_session', sign({ exp: now + sessionSeconds * 1000, d: device }), base, sessionSeconds));
     return new Response(JSON.stringify({ ok: true }), { headers });
@@ -140,6 +140,10 @@ export default async (req: Request, context: { ip?: string }) => {
   }
 
   if (action === 'state' && req.method === 'GET') {
+    // The session is renewed while the console is in use (the page asks for this every few minutes).
+    const renewal: Record<string, string> = session.exp - Date.now() < (SESSION_DAYS - 1) * 86400_000
+      ? { 'Set-Cookie': cookie('hnmo_session', sign({ exp: Date.now() + SESSION_DAYS * 86400_000, d: session.d }), base, SESSION_DAYS * 86400) }
+      : {};
     const key = await licenceKey(store);
     const [hosts, requests, licences, devices, setups, seen, marks, clones] = await Promise.all([
       listJson<HostRecord>(store, 'hosts/'),
@@ -165,7 +169,7 @@ export default async (req: Request, context: { ip?: string }) => {
       pendingBugs: blobs.length,
       issuesUrl: process.env.ISSUES_URL || '',
       latest: (await store.get('config/latest', { type: 'json' })) ?? null,
-    });
+    }, 200, renewal);
   }
 
   if (req.method !== 'POST') return json({ error: 'unknown' }, 404);

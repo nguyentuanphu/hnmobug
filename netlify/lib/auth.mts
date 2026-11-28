@@ -1,9 +1,11 @@
 // The console's sign-in: the password (CONSOLE_PASSWORD_HASH, made by tools/make-secrets.mts), and on a browser not yet
 // trusted also a 6-digit code from an authenticator app (CONSOLE_TOTP_SECRET, base32). Each successful sign-in grants
-// 365 days of trust (a signed cookie naming a device the store lists). Removing it there ends the trust. Sessions last 12 hours.
+// 365 days of trust (a signed cookie naming a device the store lists). Removing it there ends the trust and every session of it.
+// A session lasts 30 days and is renewed while the console is in use, so a trusted browser asks for the password again
+// only after 30 days unused (it used to be 12 hours).
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
-export const SESSION_HOURS = 12;
+export const SESSION_DAYS = 30;
 export const TRUST_DAYS = 365;
 
 const secret = (): Buffer => {
