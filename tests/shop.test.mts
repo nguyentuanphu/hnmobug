@@ -332,3 +332,21 @@ test('the automatic error key: given with the first setup answer, checked by the
   await store.delete(`hosts/${MACHINE}`);
   assert.equal((await weekly(first.autoErrorKey!)).status, 403, 'the old key stops working');
 });
+
+test('a paid order whose licence failed to issue gets it on the next try, once', async t => {
+  const { store } = setup(t);
+  await saveCatalogue(store, priced());
+  await store.setJSON('config/bank', { bin: '970436', account: '0123456789', accountName: 'NGUYEN VAN FIXTURE', notePrefix: 'HNMO' });
+  const auth = await ask();
+  const answer = await (await shopFn(post('/api/licence-checkout', { machine: MACHINE, ...auth, packageId: 'starter-month', currency: 'vnd', provider: 'bank' }))).json() as { order: string };
+  // The order was saved as paid, then the issue broke off (the store or the function stopped).
+  const order = await store.get(`shop-orders/${answer.order}`, { type: 'json' }) as ShopOrder;
+  await store.setJSON(`shop-orders/${answer.order}`, { ...order, status: 'paid', paidAt: new Date().toISOString() });
+  assert.equal((await poll(MACHINE, auth)).licence ?? null, null);
+
+  const again = await markTransferPaid(store, answer.order);
+  assert.ok(again.issuedAt && again.licenceId, 'issued on the second click');
+  const licence = checkLicence((await poll(MACHINE, auth)).licence, today(), await licenceKeys(store));
+  assert.ok(licence.valid && licence.maxPlayers === 50);
+  await assert.rejects(markTransferPaid(store, answer.order), /not waiting/, 'and not a second time');
+});

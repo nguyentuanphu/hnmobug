@@ -675,6 +675,7 @@ export async function applyStripeEvent(store: Store, event: unknown, settings: S
     if (!order.sessionId) return 'retry';
     if (order.sessionId !== object.id || order.currency !== object.currency || order.amount !== object.amount_total
       || (object.payment_status !== 'paid' && object.payment_status !== 'no_payment_required')) return 'ignored';
+    if (await finishPaid(store, order, now)) return 'applied';
     if (!await firstTime(store, e.id, now) || order.status !== 'pending') return 'applied';
     order.status = 'paid';
     order.paidAt = now.toISOString();
@@ -712,6 +713,16 @@ export async function applyStripeEvent(store: Store, event: unknown, settings: S
   return 'ignored';
 }
 
+/**
+ * An order saved as paid whose licence wasn't issued (the issue failed after the save): the repeated webhook or the
+ * owner's second click issues it now. Gives whether it was such an order.
+ */
+async function finishPaid(store: Store, order: ShopOrder, now: Date): Promise<boolean> {
+  if (order.status !== 'paid' || order.issuedAt) return false;
+  await issueOrder(store, order, now);
+  return true;
+}
+
 /** A PayOS webhook: verified by its signature; code '00' for the right amount issues the licence once. */
 export async function applyPayosWebhook(store: Store, body: unknown, settings: PayosSettings, now = new Date()): Promise<'applied' | 'ignored' | 'invalid'> {
   if (!body || typeof body !== 'object') return 'invalid';
@@ -722,6 +733,7 @@ export async function applyPayosWebhook(store: Store, body: unknown, settings: P
   const order = await orderByRef(store, 'payos', orderCode as number);
   if (!order || order.provider !== 'payos') return 'ignored';
   if (hook.code !== '00' || hook.data.code !== '00' || hook.data.amount !== order.amount) return 'ignored';
+  if (await finishPaid(store, order, now)) return 'applied';
   if (!await firstTime(store, `payos-${orderCode}-${String(hook.data.reference ?? '')}`, now) || order.status !== 'pending') return 'applied';
   order.status = 'paid';
   order.paidAt = now.toISOString();
@@ -743,6 +755,7 @@ export async function markTransferPaid(store: Store, id: unknown, now = new Date
   const order = await readOrder(store, id);
   if (!order || order.provider !== 'bank') throw new ShopError('unknown order', 404);
   if (await expireIfOld(store, order, now)) throw new ShopError('expired', 409);
+  if (await finishPaid(store, order, now)) return (await readOrder(store, order.id))!;
   if (order.status !== 'awaiting-transfer') throw new ShopError('not waiting', 409);
   order.status = 'paid';
   order.paidAt = now.toISOString();
