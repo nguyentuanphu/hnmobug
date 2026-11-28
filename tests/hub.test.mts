@@ -152,7 +152,7 @@ test('browser trust lasts 365 days from each successful sign-in', async (context
   assert.deepEqual(await first.json(), { ok: true });
   const [deviceCookie, sessionCookie] = first.headers.getSetCookie();
   assert.match(deviceCookie, /Max-Age=31536000; HttpOnly; Secure; SameSite=Strict/);
-  assert.match(sessionCookie, /Max-Age=43200; HttpOnly; Secure; SameSite=Strict/);
+  assert.match(sessionCookie, /Max-Age=2592000; HttpOnly; Secure; SameSite=Strict/);
   const device = unsign<{ exp: number; d: string }>(deviceCookie.split(';')[0].split('=')[1])!;
   assert.equal(device.exp, start + 365 * day);
 
