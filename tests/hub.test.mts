@@ -35,7 +35,7 @@ const post = (path: string, body: unknown, headers: Record<string, string> = {})
 
 test('a licence signed with one of the keys is known; a forged, broken or expired one is not', () => {
   const good = checkLicence(licenceFile({ licensee: 'Friends server', maxPlayers: 50, expires: '2027-01-01', machine: 'abc123', id: 'L-1' }), '2026-11-20', pem);
-  assert.deepEqual(good, { valid: true, licensee: 'Friends server', maxPlayers: 50, expires: '2027-01-01', machine: 'abc123', id: 'L-1' });
+  assert.deepEqual(good, { valid: true, licensee: 'Friends server', maxPlayers: 50, expires: '2027-01-01', machine: 'abc123', id: 'L-1', folders: 1 });
   const other = generateKeyPairSync('ed25519');
   const otherPem = other.publicKey.export({ type: 'spki', format: 'pem' }).toString();
   assert.equal(checkLicence(licenceFile({ licensee: 'B', maxPlayers: 9 }, other.privateKey), '2026-11-20', [otherPem, pem]).valid, true, 'either key');

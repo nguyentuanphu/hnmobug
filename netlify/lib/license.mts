@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export type Licence =
-  | { valid: true; licensee: string; maxPlayers: number; expires: string | null; machine: string | null; id: string | null }
+  | { valid: true; licensee: string; maxPlayers: number; expires: string | null; machine: string | null; id: string | null; folders: number }
   | { valid: false; reason: string };
 
 let buildKeyPem: string | null = null;
@@ -49,7 +49,7 @@ export function checkLicence(file: unknown, today: string, keys: string | string
     const payload = Buffer.from(parsed.payload, 'base64');
     const signature = Buffer.from(parsed.signature, 'base64');
     if (!pems.some((pem) => verifies(pem, payload, signature))) return { valid: false, reason: 'signature' };
-    const body = JSON.parse(payload.toString('utf8')) as { licensee?: unknown; maxPlayers?: unknown; expires?: unknown; machine?: unknown; id?: unknown };
+    const body = JSON.parse(payload.toString('utf8')) as { licensee?: unknown; maxPlayers?: unknown; expires?: unknown; machine?: unknown; id?: unknown; folders?: unknown };
     const expires = typeof body.expires === 'string' ? body.expires : null;
     if (expires && today > expires) return { valid: false, reason: 'expired' };
     return {
@@ -59,6 +59,7 @@ export function checkLicence(file: unknown, today: string, keys: string | string
       expires,
       machine: typeof body.machine === 'string' ? body.machine : null,
       id: typeof body.id === 'string' ? body.id : null,
+      folders: typeof body.folders === 'number' && Number.isInteger(body.folders) && body.folders >= 1 && body.folders <= 50 ? body.folders : 1,
     };
   } catch {
     return { valid: false, reason: 'broken' };

@@ -6,6 +6,7 @@
 import { checkLicence } from '../lib/license.mts';
 import { cleanMachine, cleanSetup, SETUPS_PER_DAY } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
+import { cleanFolder, noteFolder, readLimits } from '../lib/limits.mts';
 import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, type SetupRecord } from '../lib/hub.mts';
 import { firstAutoErrorKey } from '../lib/shop.mts';
 
@@ -62,9 +63,10 @@ export default async (req: Request, context: { ip?: string; geo?: Geo }) => {
       ip,
     }, new Date());
   }
+  await noteFolder(store, { machine, folder: cleanFolder(body.folder), ip, licenceId: licence.valid ? licence.id : null, allowed: licence.valid ? licence.folders : 1 }, new Date());
   // The computer's automatic error key, the first time only (the server keeps it; it asks /api/licence for a new one).
   const autoErrorKey = await firstAutoErrorKey(store, machine);
-  return json({ ok: true, ...(autoErrorKey ? { autoErrorKey } : {}) });
+  return json({ ok: true, limits: await readLimits(store), ...(autoErrorKey ? { autoErrorKey } : {}) });
 };
 
 export const config = { path: '/api/setup' };

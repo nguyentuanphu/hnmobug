@@ -31,7 +31,7 @@ export function privatePem(key: StoredKey): string {
   return Buffer.concat([decipher.update(Buffer.from(key.data, 'base64')), decipher.final()]).toString();
 }
 
-export interface LicenceBody { licensee: string; maxPlayers: number; expires: string | null; machine: string | null; issued: string; id: string }
+export interface LicenceBody { licensee: string; maxPlayers: number; expires: string | null; machine: string | null; issued: string; id: string; /** Folders allowed at once on the computer (left out for one). */ folders?: number }
 
 /** A licence file as HNMO reads it (server/src/Integrity/PlayerLicense.cs). */
 export function signLicence(body: LicenceBody, privateKeyPem: string): string {

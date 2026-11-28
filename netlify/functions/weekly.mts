@@ -8,6 +8,7 @@ import { checkLicence } from '../lib/license.mts';
 import { cleanAutoError, cleanMachine, cleanWeekly, WEEKLY_MIN_DAYS, type Stored } from '../lib/report.mts';
 import { sydneyDay } from '../lib/day.mts';
 import { checkAutoErrorKey } from '../lib/shop.mts';
+import { cleanFolder, noteFolder, readLimits } from '../lib/limits.mts';
 import { clientIp, countOnce, hub, ipHash, json, licenceKeys, noteCloneSighting, noteLicenceUse, withdrawIfShared, type HostRecord, type LicenceRecord } from '../lib/hub.mts';
 
 const DAY = 24 * 3600 * 1000;
@@ -75,6 +76,7 @@ export default async (req: Request, context: { ip?: string }) => {
       ip,
     }, now);
   }
+  await noteFolder(store, { machine, folder: cleanFolder(body.folder), ip, licenceId: licence.valid ? licence.id : null, allowed: licence.valid ? licence.folders : 1 }, now);
   const { bugs, ...latest } = weekly;
   const record: HostRecord = {
     machine,
@@ -111,7 +113,7 @@ export default async (req: Request, context: { ip?: string }) => {
     const stored: Stored = { kind: 'bug', receivedAt: now.toISOString(), machine, version: latest.version, licensee: record.licensee, licenceProblem: record.licenceProblem, bug };
     await store.setJSON(`pending/${now.toISOString()}-${randomUUID().slice(0, 8)}`, stored);
   }
-  return json({ ok: true, bugs: bugs.length, autoAccepted: [...autoAccepted], revoked, next: new Date(now.getTime() + WEEKLY_MIN_DAYS * DAY).toISOString() });
+  return json({ ok: true, bugs: bugs.length, autoAccepted: [...autoAccepted], revoked, limits: await readLimits(store), next: new Date(now.getTime() + WEEKLY_MIN_DAYS * DAY).toISOString() });
 };
 
 export const config = { path: '/api/weekly' };
